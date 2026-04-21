@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 main.py - Full pipeline for the SC conformal-mapping fluid-flow project.
 
@@ -87,9 +86,6 @@ def run_pipeline(
     n_interior: int = 25,
     max_workers: int = 6,
 ):
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 1 - Load & simplify polygon
-    # ══════════════════════════════════════════════════════════════════
     if demo:
         logger.info("=== DEMO MODE ===")
         simplified_utm = _make_demo_polygon()
@@ -105,7 +101,6 @@ def run_pipeline(
             max_vertices=max_vertices,
         )
 
-    # ── Convert to normalised complex coords ──
     z_poly, center, scale = polygon_to_complex(simplified_utm, normalise=True)
     z_poly = ensure_ccw(z_poly)
     z_poly = smooth_extreme_angles(z_poly, alpha_min=0.35, alpha_max=1.75, min_vertices=10)
@@ -113,33 +108,21 @@ def run_pipeline(
     logger.info("Polygon: %d vertices  (center=%.1f%+.1fj, scale=%.1f)",
                 n, center.real, center.imag, scale)
 
-    # ── Build Shapely polygons in normalised coords AND UTM ──
     norm_polygon = complex_to_polygon(z_poly)
 
-    # Rebuild UTM polygon from the angle-filtered vertices so that
-    # compute_terrain_info sees exactly the same n vertices as sc_params.zk
     from shapely.geometry import Polygon as ShapelyPolygon
     z_utm = z_poly * scale + center
     simplified_utm = ShapelyPolygon([(z.real, z.imag) for z in z_utm])
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 2 - Interior angles
-    # ══════════════════════════════════════════════════════════════════
     alphas = interior_angles_pi(z_poly)
     logger.info("αₖ (×π): %s", np.array2string(alphas, precision=4))
     if not verify_angle_sum(alphas):
         logger.error("Angle-sum check failed - aborting.")
         sys.exit(1)
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 3 - SC parameter problem
-    # ══════════════════════════════════════════════════════════════════
     params = solve_parameters(z_poly, alphas)
     logger.info("ζₖ = %s", np.array2string(params.zk, precision=6))
 
-    # ── Sanity check: map near-pre-vertices (slightly above real axis) ──
-    # Evaluating sc_map exactly on the real axis triggers branch-point
-    # singularities in the integrand; use a small lift to get accurate values.
     logger.info("Forward-map sanity check …")
     mapped = sc_map(params.zk + 1e-3j, params)
     max_err = 0.0
@@ -151,18 +134,12 @@ def run_pipeline(
                      mapped[k].real, mapped[k].imag, err)
     logger.info("Max vertex error: %.2e", max_err)
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 4 - Flow grid (in normalised coords)
-    # ══════════════════════════════════════════════════════════════════
     logger.info("Computing uniform flow grid (%d × %d) …", n_grid, n_grid)
     XX, YY, Psi, Phi, Zeta = compute_flow_grid(norm_polygon, params, n_grid=n_grid)
 
     n_sol = np.isfinite(Psi).sum()
     logger.info("Flow grid: %d points with valid ψ/φ", n_sol)
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 4b - Terrain-informed flow (optional)
-    # ══════════════════════════════════════════════════════════════════
     terrain_info = None
     Psi_t = Phi_t = None
 
@@ -177,7 +154,6 @@ def run_pipeline(
             max_workers=max_workers,
         )
 
-        # Build the terrain potential function
         sources = terrain_info.sources
         pot_fn = lambda zeta: terrain_potential(zeta, U=1.0, sources=sources)
 
@@ -191,9 +167,6 @@ def run_pipeline(
     elif terrain and demo:
         logger.warning("--terrain requires a real shapefile; skipped in demo mode")
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 4c - Urban-obstacle doubly-connected flow (optional)
-    # ══════════════════════════════════════════════════════════════════
     urban_obstacle  = None
     norm_poly_inner = None
     Psi_u = Phi_u   = None
@@ -213,13 +186,11 @@ def run_pipeline(
         if urban_poly_utm is None:
             logger.error("Could not obtain urban polygon - skipping urban mode")
         else:
-            # Convert inner polygon to normalised frame
             z_inner = polygon_to_complex_inner(urban_poly_utm, center, scale)
             norm_poly_inner = ShapelyPolygon(
                 [(z.real, z.imag) for z in z_inner]
             )
 
-            # Fit circular obstacle in ℍ
             urban_obstacle = compute_urban_obstacle(
                 norm_poly_inner, params, n_boundary_pts=24,
             )
@@ -227,7 +198,6 @@ def run_pipeline(
             if urban_obstacle is None:
                 logger.error("Urban obstacle fitting failed - skipping")
             else:
-                # Build potential (with or without terrain correction)
                 terrain_sources = terrain_info.sources if terrain_info else None
 
                 logger.info("Computing urban doubly-connected flow grid …")
@@ -242,9 +212,6 @@ def run_pipeline(
     elif urban and demo:
         logger.warning("--urban requires a real shapefile; skipped in demo mode")
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 4d - Road-vortex flow (optional)
-    # ══════════════════════════════════════════════════════════════════
     road_info  = None
     Psi_r = Phi_r = None
 
@@ -264,7 +231,6 @@ def run_pipeline(
         if road_info is None:
             logger.error("Road vortex computation failed - skipping road model")
         else:
-            # Build road potential (terrain correction optional)
             terrain_sources = terrain_info.sources if terrain_info else None
             if terrain_sources:
                 from src.sc_solver_dc import road_terrain_potential
@@ -288,26 +254,19 @@ def run_pipeline(
     elif roads and demo:
         logger.warning("--roads requires a real shapefile; skipped in demo mode")
 
-    # ══════════════════════════════════════════════════════════════════
-    # STEP 5 - Figures
-    # ══════════════════════════════════════════════════════════════════
     logger.info("Generating figures …")
 
-    # Fig 1: UTM coords (original vs simplified)
     plot_polygon_comparison(original_utm, simplified_utm)
 
-    # Compute exact parametric streamlines / equipotentials via forward map
     stream_curves, equip_curves = compute_curves_forward(
         params, norm_polygon, n_stream=28, n_equip=28,
     )
 
-    # Figs 2-4: normalised coords (uniform flow)
     plot_streamlines(XX, YY, Psi, norm_polygon, stream_curves=stream_curves)
     plot_equipotentials(XX, YY, Phi, norm_polygon, equip_curves=equip_curves)
     plot_combined(XX, YY, Psi, Phi, norm_polygon,
                   stream_curves=stream_curves, equip_curves=equip_curves)
 
-    # Figs 5-6: terrain (if computed)
     if Psi_t is not None:
         plot_terrain_combined(
             XX, YY, Psi_t, Phi_t, norm_polygon,
@@ -317,10 +276,7 @@ def run_pipeline(
             XX, YY, Psi, Phi, Psi_t, Phi_t, norm_polygon,
         )
 
-    # Figs 7-8: urban obstacle (if computed)
     if Psi_u is not None:
-        # Pass uniform-flow ψ range so the urban panel uses the same contour
-        # levels as the baseline, suppressing the dipole spike near ζ₀.
         psi_ref = (float(np.nanpercentile(Psi, 5)),
                    float(np.nanpercentile(Psi, 95))) if Psi is not None else None
         plot_urban_flow(
@@ -329,7 +285,6 @@ def run_pipeline(
             obstacle=urban_obstacle,
             psi_ref_range=psi_ref,
         )
-        # Three-way comparison only when both terrain and urban were run
         if Psi_t is not None:
             plot_three_way_comparison(
                 XX, YY, Psi, Psi_t, Psi_u,
@@ -346,7 +301,6 @@ def run_pipeline(
                 equip_color_right=URBAN_EQUIP,
             )
 
-    # Figs 9-10: road-vortex flow (if computed)
     if Psi_r is not None:
         plot_road_flow(
             XX, YY, Psi_r, Phi_r, norm_polygon,
@@ -354,7 +308,6 @@ def run_pipeline(
             norm_center=center,
             norm_scale=scale,
         )
-        # Side-by-side: uniform vs road-vortex
         from src.visualization import plot_flow_comparison as _pfc
         _pfc(
             XX, YY, Psi, Phi, Psi_r, Phi_r, norm_polygon,
@@ -364,7 +317,6 @@ def run_pipeline(
             stream_color_right=ROAD_STREAM,
             equip_color_right=ROAD_EQUIP,
         )
-        # Four-way comparison when all three enhancements were run
         if Psi_t is not None and Psi_u is not None:
             plot_four_way_comparison(
                 XX, YY, Psi, Psi_t, Psi_u, Psi_r,

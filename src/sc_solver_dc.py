@@ -54,8 +54,6 @@ from .flow import sc_inverse_single
 logger = logging.getLogger(__name__)
 
 
-# ── Data container ─────────────────────────────────────────────────────────
-
 @dataclass
 class UrbanObstacle:
     """Circular obstacle in ℍ representing the urban core.
@@ -74,8 +72,6 @@ class UrbanObstacle:
     mapped_boundary: np.ndarray
     inner_polygon_norm: Polygon
 
-
-# ── Main solver ────────────────────────────────────────────────────────────
 
 def compute_urban_obstacle(
     inner_polygon_norm: Polygon,
@@ -100,7 +96,6 @@ def compute_urban_obstacle(
     -------
     UrbanObstacle, or None if inverse mapping fails for too many points.
     """
-    # Sample points on the inner polygon boundary
     boundary_pts = _sample_boundary(inner_polygon_norm, n_boundary_pts)
     logger.info("Mapping %d inner boundary points to ℍ …", len(boundary_pts))
 
@@ -137,7 +132,6 @@ def compute_urban_obstacle(
             "lifting centre upward",
             zeta0.real, zeta0.imag, radius,
         )
-        # Lift centre so Im(ζ₀) > radius (obstacle entirely in ℍ)
         zeta0 = zeta0.real + (radius + 0.05) * 1j
 
     logger.info(
@@ -157,8 +151,6 @@ def compute_urban_obstacle(
         inner_polygon_norm=inner_polygon_norm,
     )
 
-
-# ── Potential function ─────────────────────────────────────────────────────
 
 def urban_potential(
     zeta: complex,
@@ -186,7 +178,6 @@ def urban_potential(
     d1 = zeta - z0
     d2 = zeta - np.conj(z0)
 
-    # Regularise to avoid division by zero (should not happen for ζ ∈ ℍ \ obstacle)
     if abs(d1) < 1e-12:
         d1 = 1e-12 + 0j
     if abs(d2) < 1e-12:
@@ -206,7 +197,6 @@ def urban_terrain_potential(
     W(ζ) = urban_potential(ζ) + Σₖ terrain source/sink terms
     """
     from .terrain import terrain_potential
-    # Get terrain part (without U·ζ) by subtracting uniform flow
     W_terrain_full = terrain_potential(zeta, U, terrain_sources)
     W_uniform = U * zeta
     terrain_correction = W_terrain_full - W_uniform
@@ -227,7 +217,7 @@ def road_terrain_potential(
     from .terrain import terrain_potential
     from .roads import road_potential
     W_terrain = terrain_potential(zeta, U, terrain_sources)
-    W_road_correction = road_potential(zeta, 0.0, road_vortices)   # U=0 so no extra Uζ
+    W_road_correction = road_potential(zeta, 0.0, road_vortices)
     return W_terrain + W_road_correction
 
 
@@ -255,12 +245,9 @@ def full_potential(
     return W_urban + terrain_correction + W_road_full
 
 
-# ── Geometry helpers ───────────────────────────────────────────────────────
-
 def _sample_boundary(poly: Polygon, n_pts: int) -> list[complex]:
     """Return n_pts complex points evenly spaced along the polygon boundary."""
-    coords = np.array(poly.exterior.coords)  # includes closing point
-    # Compute cumulative arc length
+    coords = np.array(poly.exterior.coords)
     diffs = np.diff(coords, axis=0)
     seg_lengths = np.hypot(diffs[:, 0], diffs[:, 1])
     cumlen = np.concatenate([[0.0], np.cumsum(seg_lengths)])
@@ -269,7 +256,6 @@ def _sample_boundary(poly: Polygon, n_pts: int) -> list[complex]:
     sample_lens = np.linspace(0, total, n_pts, endpoint=False)
     pts = []
     for s in sample_lens:
-        # Find which segment
         idx = np.searchsorted(cumlen, s, side="right") - 1
         idx = min(idx, len(coords) - 2)
         t = (s - cumlen[idx]) / max(seg_lengths[idx], 1e-15)
@@ -294,7 +280,6 @@ def _minimum_enclosing_circle(
     pts = list(points)
     _random.shuffle(pts)
 
-    # ── boundary-circle constructors ──────────────────────────────────────
 
     def _c1(p: complex) -> tuple[complex, float]:
         return p, 0.0
@@ -309,7 +294,7 @@ def _minimum_enclosing_circle(
         bx, by = q.real, q.imag
         cx, cy = r.real, r.imag
         D = 2.0 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
-        if abs(D) < 1e-12:          # collinear: take longest pair
+        if abs(D) < 1e-12:
             d_pq, d_pr, d_qr = abs(p - q), abs(p - r), abs(q - r)
             if d_pq >= d_pr and d_pq >= d_qr:
                 return _c2(p, q)
@@ -329,7 +314,6 @@ def _minimum_enclosing_circle(
     def _in_circle(c: complex, r: float, p: complex) -> bool:
         return abs(p - c) <= r + 1e-10
 
-    # ── Welzl recursion ───────────────────────────────────────────────────
 
     def _welzl(P: list, R: list, n: int) -> tuple[complex, float]:
         if n == 0 or len(R) == 3:

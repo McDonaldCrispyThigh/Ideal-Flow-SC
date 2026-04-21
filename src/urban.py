@@ -22,12 +22,9 @@ from shapely.ops import unary_union
 
 logger = logging.getLogger(__name__)
 
-# ── Color constants exported for visualization ────────────────────────────
-URBAN_BOUNDARY_COLOR = "#5C2D91"   # deep purple
-URBAN_FILL_COLOR     = "#EDE7F6"   # lavender tint
+URBAN_BOUNDARY_COLOR = "#5C2D91"
+URBAN_FILL_COLOR     = "#EDE7F6"
 
-# ── Fallback: approximate downtown Boulder in UTM Zone 13N ────────────────
-# Pearl Street Mall area / urban core, roughly 2.5 km × 2 km
 _DOWNTOWN_UTM = np.array([
     [474800, 4428500],
     [476600, 4428100],
@@ -81,13 +78,11 @@ def get_urban_polygon(
         logger.error("Failed to obtain any urban polygon")
         return None
 
-    # Clip to Boulder boundary
     poly = _clip_inside(poly, boulder_polygon_utm, margin_fraction)
     if poly is None or poly.is_empty:
         logger.error("Urban polygon is empty after clipping to Boulder boundary")
         return None
 
-    # Simplify to target vertex count
     poly = _simplify_to_n(poly, n_vertices)
 
     n_v = len(poly.exterior.coords) - 1
@@ -98,8 +93,6 @@ def get_urban_polygon(
     return poly
 
 
-# ── OSM download ──────────────────────────────────────────────────────────
-
 def _get_from_osmnx(
     boulder_polygon_utm: Polygon,
     epsg_utm: int = 26913,
@@ -109,7 +102,6 @@ def _get_from_osmnx(
         import osmnx as ox
         from pyproj import Transformer
 
-        # Convert outer polygon to WGS84 for osmnx
         to_wgs84 = Transformer.from_crs(
             f"EPSG:{epsg_utm}", "EPSG:4326", always_xy=True
         )
@@ -119,8 +111,6 @@ def _get_from_osmnx(
         ])
         poly_wgs84 = Polygon(coords_wgs84)
 
-        # Use only the high-density commercial/retail core - NOT residential,
-        # which spans most of the city and produces an overly large polygon.
         logger.info("Querying OSM for commercial/retail core polygons …")
         tags = {"landuse": ["commercial", "retail", "institutional"]}
         gdf = ox.features_from_polygon(poly_wgs84, tags=tags)
@@ -137,10 +127,8 @@ def _get_from_osmnx(
         logger.info("OSM commercial/retail: %d polygons found", len(polys))
         polys = polys.set_crs("EPSG:4326").to_crs(f"EPSG:{epsg_utm}")
 
-        # Union, then take the largest contiguous polygon (not convex hull)
         union = unary_union(polys.geometry.values)
         if isinstance(union, MultiPolygon):
-            # Pick the largest piece
             union = max(union.geoms, key=lambda g: g.area)
 
         return union if isinstance(union, Polygon) else None
@@ -153,21 +141,17 @@ def _get_from_osmnx(
         return None
 
 
-# ── Geometry helpers ──────────────────────────────────────────────────────
-
 def _clip_inside(
     inner: Polygon,
     outer: Polygon,
     margin_fraction: float = 0.04,
 ) -> Optional[Polygon]:
     """Clip inner polygon to outer and shrink by a margin."""
-    # Buffer outer inward to create a safety margin
     margin = outer.length * margin_fraction * 0.5
     outer_shrunk = outer.buffer(-margin)
 
     clipped = inner.intersection(outer_shrunk)
     if clipped.is_empty:
-        # Try without shrinkage
         clipped = inner.intersection(outer)
 
     if clipped.is_empty:
@@ -179,7 +163,6 @@ def _clip_inside(
 
 def _simplify_to_n(poly: Polygon, n_target: int) -> Polygon:
     """Douglas-Peucker simplification via binary search to hit n_target vertices."""
-    # Work with convex hull for a clean simple polygon
     hull = poly.convex_hull
     if not isinstance(hull, Polygon):
         hull = poly

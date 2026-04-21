@@ -142,9 +142,8 @@ def smooth_extreme_angles(
             break
         alphas = interior_angles_pi(z_poly)
 
-        # Find worst offender: whichever is furthest outside the allowed band
-        deficit_low  = alpha_min - alphas          # positive where too small
-        deficit_high = alphas - alpha_max          # positive where too large
+        deficit_low  = alpha_min - alphas
+        deficit_high = alphas - alpha_max
         severity = np.maximum(deficit_low, deficit_high)
         worst = int(np.argmax(severity))
 

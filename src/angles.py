@@ -24,8 +24,8 @@ def interior_angles_pi(z_poly: np.ndarray) -> np.ndarray:
     for k in range(n):
         v_in  = z_poly[k] - z_poly[k - 1]
         v_out = z_poly[(k + 1) % n] - z_poly[k]
-        turn = np.angle(v_out / v_in)          # exterior turn
-        alphas[k] = 1.0 - turn / np.pi         # interior / π
+        turn = np.angle(v_out / v_in)
+        alphas[k] = 1.0 - turn / np.pi
 
     return alphas
 

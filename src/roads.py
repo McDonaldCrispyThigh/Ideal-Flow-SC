@@ -54,19 +54,14 @@ from .sc_solver import SCParameters
 logger = logging.getLogger(__name__)
 
 
-# ── Data container ────────────────────────────────────────────────────────
-
 @dataclass
 class RoadInfo:
     """Road network intersection data and derived vortex parameters."""
     n_intersections: int
-    intersection_positions_utm: np.ndarray   # (M, 2) UTM coords
-    intersection_degrees: np.ndarray         # (M,) node degree
+    intersection_positions_utm: np.ndarray
+    intersection_degrees: np.ndarray
     vortices: List[Tuple[complex, float]] = field(default_factory=list)
-    # each entry: (s_k position in ℍ,  Γ_k circulation strength)
 
-
-# ── OSM intersection download ─────────────────────────────────────────────
 
 def get_road_intersections(
     polygon_utm,
@@ -109,7 +104,6 @@ def _osmnx_intersections(
 
     logger.info("Downloading OSM road network (types: %s) …", ", ".join(road_types))
 
-    # Convert polygon to WGS84 for osmnx
     tf_fwd = Transformer.from_crs("EPSG:26913", "EPSG:4326", always_xy=True)
     coords_utm = np.array(polygon_utm.exterior.coords)
     coords_wgs = np.array([tf_fwd.transform(x, y) for x, y in coords_utm])
@@ -122,7 +116,6 @@ def _osmnx_intersections(
     G_ud = ox.convert.to_undirected(G)
     degrees = dict(G_ud.degree())
 
-    # Intersections: degree ≥ 3 (T-junctions, crossings)
     crossings = [(nid, deg) for nid, deg in degrees.items() if deg >= 3]
     if not crossings:
         logger.warning("No intersections with degree ≥ 3 found")
@@ -131,7 +124,6 @@ def _osmnx_intersections(
     crossings.sort(key=lambda x: x[1], reverse=True)
     crossings = crossings[:n_max]
 
-    # Convert back to UTM, filter to inside polygon
     tf_back = Transformer.from_crs("EPSG:4326", "EPSG:26913", always_xy=True)
     coords_out, degrees_out = [], []
     for nid, deg in crossings:
@@ -158,18 +150,18 @@ def _fallback_intersections(
     WGS84 (lon, lat) coords for key arterial crossings.
     """
     _LONLAT = [
-        (-105.2835, 40.0186),   # Broadway & Canyon Blvd          (degree 5)
-        (-105.2835, 40.0135),   # Broadway & Arapahoe Ave          (degree 5)
-        (-105.2519, 40.0186),   # 28th St & Canyon Blvd           (degree 4)
-        (-105.2519, 40.0135),   # 28th St & Arapahoe Ave          (degree 4)
-        (-105.2366, 40.0135),   # Foothills Pkwy & Arapahoe Ave   (degree 4)
-        (-105.2835, 40.0296),   # Broadway & Iris Ave              (degree 4)
-        (-105.2519, 40.0296),   # 28th St & Iris Ave               (degree 4)
-        (-105.2835, 40.0050),   # Broadway & Baseline Rd           (degree 4)
-        (-105.2519, 40.0050),   # 28th St & Baseline Rd            (degree 3)
-        (-105.2366, 40.0050),   # Foothills & Baseline Rd          (degree 3)
-        (-105.2683, 40.0186),   # 17th St & Canyon Blvd            (degree 3)
-        (-105.2683, 40.0050),   # 17th St & Baseline               (degree 3)
+        (-105.2835, 40.0186),
+        (-105.2835, 40.0135),
+        (-105.2519, 40.0186),
+        (-105.2519, 40.0135),
+        (-105.2366, 40.0135),
+        (-105.2835, 40.0296),
+        (-105.2519, 40.0296),
+        (-105.2835, 40.0050),
+        (-105.2519, 40.0050),
+        (-105.2366, 40.0050),
+        (-105.2683, 40.0186),
+        (-105.2683, 40.0050),
     ]
     _DEG = [5.0, 5.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0]
 
@@ -191,8 +183,6 @@ def _fallback_intersections(
     logger.info("Fallback road intersections inside polygon: %d", len(coords_out))
     return np.array(coords_out), np.array(degrees_out, dtype=float)
 
-
-# ── Full pipeline ─────────────────────────────────────────────────────────
 
 def compute_road_info(
     polygon_utm,
@@ -231,36 +221,28 @@ def compute_road_info(
 
     coords_utm, degrees = result
 
-    # ── Convert UTM → normalised complex coords ───────────────────────────
     z_norm = (coords_utm[:, 0] + 1j * coords_utm[:, 1] - center) / scale
     logger.info("Road intersections (normalised): %s",
                 np.array2string(z_norm, precision=3))
 
-    # ── SC inverse map: z ∈ Ω  →  ζ ∈ ℍ ─────────────────────────────────
     from .flow import sc_inverse_single
 
     vortices: List[Tuple[complex, float]] = []
     n_ok = 0
     logger.info("SC inverse map for %d road intersections …", len(z_norm))
 
-    # Use centroid of polygon as warm-start (good starting point in ℍ)
     zeta_prev = 0.0 + 0.5j
     for k, z_t in enumerate(z_norm):
         zeta = sc_inverse_single(z_t, sc_params, zeta0=zeta_prev, maxfev=800)
         if zeta is None:
             logger.warning("  Intersection %d: SC inverse failed — skipped", k)
             continue
-        # Enforce minimum distance from real axis
         if zeta.imag < delta_min:
             zeta = zeta.real + delta_min * 1j
 
-        # Circulation sign: positive (CCW) if north of polygon centroid,
-        # negative (CW) if south.  This creates a vortex-pair structure
-        # matching Boulder's prevailing westerly-flow shear pattern.
         z_centroid = np.mean(z_norm)
         sign = +1.0 if z_t.imag >= z_centroid.imag else -1.0
 
-        # Strength proportional to node degree (normalised)
         Gamma = sign * Gamma_scale * float(degrees[k]) / float(max(degrees))
         vortices.append((zeta, Gamma))
         logger.info(
@@ -283,8 +265,6 @@ def compute_road_info(
         vortices=vortices,
     )
 
-
-# ── Potential function ────────────────────────────────────────────────────
 
 def road_potential(
     zeta: complex,

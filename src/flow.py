@@ -31,11 +31,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Type alias for a potential function:  ζ → W(ζ)
 PotentialFn = Callable[[complex], complex]
 
-
-# ── Parametric streamline / equipotential curves (forward-map, no inverse) ──
 
 def compute_curves_forward(
     params: SCParameters,
@@ -66,20 +63,13 @@ def compute_curves_forward(
         potential_fn = lambda zeta: uniform_potential(zeta, U)
 
     prep_poly = prep(norm_polygon)
-    # Wide t range: the "infinite" side of the polygon maps to large |t|.
-    # Use denser sampling near the origin and sparser at the extremes.
     t_inner = np.linspace(-4.0, 4.0, n_pts_per_curve * 3 // 4)
     t_outer = np.concatenate([np.linspace(-20.0, -4.0, n_pts_per_curve // 8),
                                np.linspace(4.0,  20.0, n_pts_per_curve // 8)])
     t_vals = np.unique(np.concatenate([t_outer, t_inner]))
 
-    # ── Streamlines: Im(ζ) = y₀ for uniform flow ─────────────────────────
-    # y₀ range: small y → near boundary; large y → interior / "far" regions.
-    # Use log-spacing so we capture near-boundary detail well.
-    # Combine near-boundary and far-field levels.
-    # Don't go below y=0.04 - very small y gives too-dense boundary lines.
-    y_near = np.logspace(-1.4, -0.5, n_stream // 2)   # 0.04 … 0.32
-    y_far  = np.logspace(-0.4,  0.8, n_stream - n_stream // 2)  # 0.40 … 6.3
+    y_near = np.logspace(-1.4, -0.5, n_stream // 2)
+    y_far  = np.logspace(-0.4,  0.8, n_stream - n_stream // 2)
     y_levels = np.unique(np.concatenate([y_near, y_far]))
 
     stream_curves = []
@@ -88,7 +78,6 @@ def compute_curves_forward(
         zeta_curve = t_vals + 1j * y0
         z_curve = sc_map(zeta_curve, params, n_pts=200)
         x_c, y_c = z_curve.real, z_curve.imag
-        # Clip by polygon: keep segments where both endpoints are inside
         xs, ys = [], []
         for k in range(len(x_c) - 1):
             p0 = (x_c[k],   y_c[k])
@@ -104,8 +93,6 @@ def compute_curves_forward(
         if xs:
             stream_curves.append((np.array(xs), np.array(ys)))
 
-    # ── Equipotentials: Re(ζ) = x₀ for uniform flow ──────────────────────
-    # x₀ spans the range of pre-vertices plus some margin.
     zk = params.zk
     x0_levels = np.linspace(zk[0] * 1.3, zk[-1] * 1.3, n_equip)
     y_vals = np.logspace(-1.5, 0.8, n_pts_per_curve)
@@ -153,9 +140,7 @@ def sc_inverse_single(
         fz = sc_map_single(zeta, params, n_pts=250)
         return [fz.real - z_target.real, fz.imag - z_target.imag]
 
-    # Try the warm-start guess first
     guesses = [zeta0]
-    # Fallback guesses spread across the upper half-plane
     for rx in np.linspace(-0.8, 0.8, 5):
         for iy in [0.2, 0.6, 1.2]:
             g = rx + 1j * iy
@@ -171,7 +156,7 @@ def sc_inverse_single(
         )
         if ier == 1:
             zeta = sol[0] + 1j * sol[1]
-            if zeta.imag > 1e-10:   # strictly inside ℍ
+            if zeta.imag > 1e-10:
                 return zeta
     return None
 
@@ -211,32 +196,24 @@ def compute_flow_grid(
         from .terrain import uniform_potential
         potential_fn = lambda zeta: uniform_potential(zeta, U)
 
-    # ── 1. Sample ζ in upper half-plane and map forward ──────────────────
-    # Use a grid that concentrates near the real axis (where the polygon
-    # boundary maps to) and fans out.  Log-spaced y captures both near-
-    # boundary detail and far-field behaviour.
     x_zeta = np.linspace(-1.8, 1.8, n_zeta)
-    y_zeta = np.logspace(-1.5, 0.7, n_zeta // 2)   # ~0.03 … 5
+    y_zeta = np.logspace(-1.5, 0.7, n_zeta // 2)
     X_zeta, Y_zeta = np.meshgrid(x_zeta, y_zeta)
     zeta_flat = (X_zeta + 1j * Y_zeta).ravel()
 
     logger.info("Forward SC map: evaluating %d ζ points …", len(zeta_flat))
     z_flat = sc_map(zeta_flat, params, n_pts=250)
 
-    # Evaluate potential at each ζ point
     W_flat = np.array([potential_fn(z) for z in zeta_flat], dtype=complex)
     Psi_flat = W_flat.imag
     Phi_flat = W_flat.real
 
-    # ── 2. Build regular z-space output grid ─────────────────────────────
     bounds = norm_polygon.bounds
     pad = 0.04 * max(bounds[2] - bounds[0], bounds[3] - bounds[1])
     xv = np.linspace(bounds[0] - pad, bounds[2] + pad, n_grid)
     yv = np.linspace(bounds[1] - pad, bounds[3] + pad, n_grid)
     XX, YY = np.meshgrid(xv, yv)
 
-    # ── 3. Scattered interpolation to regular grid ────────────────────────
-    # Only use z points that landed inside or near the polygon bounding box
     bx0, by0, bx1, by1 = bounds
     margin = 0.3
     in_box = (
@@ -256,12 +233,10 @@ def compute_flow_grid(
 
     Psi = griddata(pts, Psi_flat[in_box], (XX, YY), method="linear")
     Phi = griddata(pts, Phi_flat[in_box], (XX, YY), method="linear")
-    # Zeta: store Re and Im separately then reassemble
     zr  = griddata(pts, zeta_flat[in_box].real, (XX, YY), method="linear")
     zi  = griddata(pts, zeta_flat[in_box].imag, (XX, YY), method="linear")
     Zeta = zr + 1j * zi
 
-    # ── 4. Mask points outside the polygon ───────────────────────────────
     logger.info("Building interior mask (%d × %d) …", n_grid, n_grid)
     prep_poly = prep(norm_polygon)
     for i in range(n_grid):
@@ -317,13 +292,11 @@ def compute_flow_grid_urban(
     else:
         potential_fn = lambda zeta: urban_potential(zeta, U, obstacle)
 
-    # ── Forward map: sample ζ, skip points inside obstacle circle ────────
     x_zeta = np.linspace(-1.8, 1.8, n_zeta)
     y_zeta = np.logspace(-1.5, 0.7, n_zeta // 2)
     X_zeta, Y_zeta = np.meshgrid(x_zeta, y_zeta)
     zeta_flat = (X_zeta + 1j * Y_zeta).ravel()
 
-    # Mask out ζ inside the obstacle circle (no-penetration region)
     not_in_obstacle = np.abs(zeta_flat - obstacle.zeta0) >= obstacle.radius
     zeta_flat = zeta_flat[not_in_obstacle]
 
@@ -334,7 +307,6 @@ def compute_flow_grid_urban(
     Psi_flat = W_flat.imag
     Phi_flat = W_flat.real
 
-    # ── Build output grid ────────────────────────────────────────────────
     bounds = norm_polygon_outer.bounds
     pad = 0.04 * max(bounds[2] - bounds[0], bounds[3] - bounds[1])
     xv = np.linspace(bounds[0] - pad, bounds[2] + pad, n_grid)
@@ -356,7 +328,6 @@ def compute_flow_grid_urban(
     zi   = griddata(pts, zeta_flat[in_box].imag, (XX, YY), method="linear")
     Zeta = zr + 1j * zi
 
-    # ── Mask: outside outer OR inside inner polygon ───────────────────────
     logger.info("Building doubly-connected interior mask (%d × %d) …",
                 n_grid, n_grid)
     from shapely.prepared import prep as shapely_prep

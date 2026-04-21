@@ -59,24 +59,19 @@ from .sc_solver import SCParameters
 
 logger = logging.getLogger(__name__)
 
-# ── Data container ────────────────────────────────────────────────────────
-
 
 @dataclass
 class TerrainInfo:
     """Holds everything the terrain-aware potential needs."""
-    elevations: np.ndarray            # elevation at each vertex (metres)
-    grad_xy: Tuple[float, float]      # (de/dx, de/dy)  uphill gradient
-    theta_downhill: float             # angle of steepest descent (rad)
-    slope_magnitude: float            # |∇e|  (m / m)
+    elevations: np.ndarray
+    grad_xy: Tuple[float, float]
+    theta_downhill: float
+    slope_magnitude: float
     sources: List[Tuple[complex, float]] = field(default_factory=list)
-    # each entry is (ζ_location_in_H, Q_strength)
 
-
-# ── USGS 3DEP Elevation Point Query Service ──────────────────────────────
 
 _EPQS_URL = "https://epqs.nationalmap.gov/v1/json?x={lon}&y={lat}&units=Meters&wkid=4326"
-_UTM_TO_LONLAT = None  # lazy singleton
+_UTM_TO_LONLAT = None
 
 
 def _get_transformer(epsg_source: int = 26913) -> Transformer:
@@ -96,15 +91,12 @@ def _query_epqs(lon: float, lat: float, timeout: float = 12.0) -> Optional[float
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read())
             val = float(data["value"])
-            if val < -1000:  # -1e6 sentinel for ocean / no data
+            if val < -1000:
                 return None
             return val
     except Exception as exc:
         logger.debug("EPQS query failed (%.4f, %.4f): %s", lon, lat, exc)
         return None
-
-
-# ── Dense sampling helpers ────────────────────────────────────────────────
 
 
 def _sample_boundary_points(
@@ -116,10 +108,10 @@ def _sample_boundary_points(
     Returns array of shape (M, 2) in UTM coordinates.
     Does NOT include the original vertices (those are queried separately).
     """
-    coords = np.array(polygon_utm.exterior.coords)  # includes closing point
+    coords = np.array(polygon_utm.exterior.coords)
     pts = []
     for i in range(len(coords) - 1):
-        for t in np.linspace(0, 1, n_per_edge + 2)[1:-1]:  # exclude endpoints
+        for t in np.linspace(0, 1, n_per_edge + 2)[1:-1]:
             pts.append(coords[i] * (1 - t) + coords[i + 1] * t)
     return np.array(pts) if pts else np.empty((0, 2))
 
@@ -130,7 +122,7 @@ def _sample_interior_points(
 ) -> np.ndarray:
     """Generate a grid of interior sample points inside the polygon."""
     minx, miny, maxx, maxy = polygon_utm.bounds
-    side = int(np.ceil(np.sqrt(n_pts * 1.5)))  # oversample to account for exterior
+    side = int(np.ceil(np.sqrt(n_pts * 1.5)))
     xs = np.linspace(minx, maxx, side + 2)[1:-1]
     ys = np.linspace(miny, maxy, side + 2)[1:-1]
     pts = []
@@ -191,7 +183,6 @@ def get_vertex_elevations(
     coords = np.array(polygon_utm.exterior.coords)[:-1]
     elevations = _batch_query_elevations(coords, epsg_source)
 
-    # Fall back to linear model if too few successes
     if np.sum(np.isfinite(elevations)) < 3:
         logger.warning("Too few API results - using fallback elevation model")
         elevations = _boulder_fallback(coords)
@@ -230,7 +221,6 @@ def get_dense_elevations(
 
     all_elevs = _batch_query_elevations(all_coords, epsg_source, max_workers)
 
-    # Fill NaN with fallback model
     nan_mask = np.isnan(all_elevs)
     if nan_mask.any():
         fb = _boulder_fallback(all_coords[nan_mask])
@@ -265,7 +255,6 @@ def _fit_rbf(all_coords: np.ndarray, all_elevs: np.ndarray) -> RBFInterpolator:
     coords_n = (all_coords - centre) / scale
     rbf = RBFInterpolator(coords_n, all_elevs, kernel="thin_plate_spline")
 
-    # 5-fold cross-validation R² (in-sample R² is always 1.0 for interpolators)
     n_pts = len(all_elevs)
     k = min(5, n_pts)
     fold_size = n_pts // k
@@ -279,7 +268,6 @@ def _fit_rbf(all_coords: np.ndarray, all_elevs: np.ndarray) -> RBFInterpolator:
             kernel="thin_plate_spline",
         )
         oof_pred[val_mask] = rbf_fold(coords_n[val_mask])
-    # Remaining samples (last partial fold, if any)
     remainder = k * fold_size
     if remainder < n_pts:
         val_mask = np.zeros(n_pts, dtype=bool)
@@ -298,11 +286,10 @@ def _fit_rbf(all_coords: np.ndarray, all_elevs: np.ndarray) -> RBFInterpolator:
         cv_r2, n_pts,
     )
 
-    # Return a wrapper that accepts raw UTM coords
     def _eval(coords_utm: np.ndarray) -> np.ndarray:
         return rbf((coords_utm - centre) / scale)
 
-    return _eval  # type: ignore[return-value]
+    return _eval
 
 
 def _vertex_gradients(
@@ -325,7 +312,6 @@ def _vertex_gradients(
     n_v = len(vertex_coords)
     grads = np.zeros((n_v, 2))
 
-    # Build all shifted coordinate sets at once for efficiency
     xp = vertex_coords.copy(); xp[:, 0] += h
     xm = vertex_coords.copy(); xm[:, 0] -= h
     yp = vertex_coords.copy(); yp[:, 1] += h
@@ -362,7 +348,6 @@ def compute_terrain_info(
     max_workers     : concurrent API threads.
     epsg_source     : CRS of the UTM polygon.
     """
-    # ── 1. Dense elevation sampling ────────────────────────────────────────
     all_coords, all_elevs = get_dense_elevations(
         polygon_utm, n_per_edge=n_per_edge, n_interior=n_interior,
         epsg_source=epsg_source, max_workers=max_workers,
@@ -370,13 +355,10 @@ def compute_terrain_info(
 
     vertex_coords = np.array(polygon_utm.exterior.coords)[:-1]
     n_v = len(vertex_coords)
-    elevations = all_elevs[:n_v]   # vertex-only elevations
+    elevations = all_elevs[:n_v]
 
-    # ── 2. RBF thin-plate-spline surface fit ───────────────────────────────
     rbf_eval = _fit_rbf(all_coords, all_elevs)
 
-    # ── 3. Compute mean gradient (for TerrainInfo metadata) ───────────────
-    # Use the linear-plane coefficients purely for orientation metadata
     x, y = all_coords[:, 0], all_coords[:, 1]
     A_mat = np.column_stack([np.ones_like(x), x, y])
     coeffs, *_ = np.linalg.lstsq(A_mat, all_elevs, rcond=None)
@@ -388,14 +370,11 @@ def compute_terrain_info(
                 "(%.5f, %.5f) m/m  |∇e| = %.5f  downhill = %.1f°",
                 grad_x, grad_y, slope_mag, np.degrees(theta_down))
 
-    # ── 4. Per-vertex gradients from RBF surface ──────────────────────────
     vertex_grads = _vertex_gradients(vertex_coords, rbf_eval)
 
-    # Project onto free-stream direction to get signed strength
     cos_f, sin_f = np.cos(flow_direction), np.sin(flow_direction)
     projected = vertex_grads[:, 0] * cos_f + vertex_grads[:, 1] * sin_f
 
-    # Normalise so max |qₖ| = Q_scale
     max_proj = np.max(np.abs(projected))
     if max_proj < 1e-8:
         logger.warning("Terrain gradient too small - no sources added")
@@ -403,8 +382,7 @@ def compute_terrain_info(
     else:
         q_strengths = Q_scale * projected / max_proj
 
-    # ── 5. Place one source/sink per vertex in ℍ ──────────────────────────
-    zk = sc_params.zk   # pre-vertices on ℝ, indexed same as polygon vertices
+    zk = sc_params.zk
     sources: List[Tuple[complex, float]] = []
     n_sources = n_sinks = 0
 
@@ -438,9 +416,6 @@ def compute_terrain_info(
     )
 
 
-# ── Potential function ────────────────────────────────────────────────────
-
-
 def terrain_potential(
     zeta: complex,
     U: float,
@@ -457,7 +432,6 @@ def terrain_potential(
     for s, Q in sources:
         d1 = zeta - s
         d2 = zeta - np.conj(s)
-        # Regularize to avoid log(0)
         if abs(d1) < 1e-12:
             d1 = 1e-12 + 0j
         if abs(d2) < 1e-12:

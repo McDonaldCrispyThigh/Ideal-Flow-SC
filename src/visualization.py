@@ -29,24 +29,22 @@ BOUNDARY_COLOR = "#1A3A6B"
 FILL_COLOR     = "#F0F4FA"
 STREAM_COLOR   = "#2563A8"
 EQUIP_COLOR    = "#B04020"
-TERRAIN_STREAM = "#1B7340"   # green for terrain streamlines
-TERRAIN_EQUIP  = "#9B5B00"   # amber for terrain equipotentials
-URBAN_BOUNDARY = "#5C2D91"   # deep purple for urban core boundary
-URBAN_FILL     = "#EDE7F6"   # lavender for urban core fill
-URBAN_STREAM   = "#1A5276"   # dark blue for urban-obstacle streamlines
-URBAN_EQUIP    = "#7B241C"   # dark red for urban-obstacle equipotentials
-ROAD_STREAM    = "#7B3F00"   # brown for road-vortex streamlines
-ROAD_EQUIP     = "#1A6B4B"   # teal for road-vortex equipotentials
-VORTEX_POS     = "#D4380D"   # orange-red for CCW (positive) vortices
-VORTEX_NEG     = "#1677FF"   # blue for CW (negative) vortices
+TERRAIN_STREAM = "#1B7340"
+TERRAIN_EQUIP  = "#9B5B00"
+URBAN_BOUNDARY = "#5C2D91"
+URBAN_FILL     = "#EDE7F6"
+URBAN_STREAM   = "#1A5276"
+URBAN_EQUIP    = "#7B241C"
+ROAD_STREAM    = "#7B3F00"
+ROAD_EQUIP     = "#1A6B4B"
+VORTEX_POS     = "#D4380D"
+VORTEX_NEG     = "#1677FF"
 FIG_DIR        = Path("figures")
 
 
 def _ensure_fig_dir():
     FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-
-# ── Figure 1 ──────────────────────────────────────────────────────────────
 
 def plot_polygon_comparison(
     original: Polygon,
@@ -85,8 +83,6 @@ def plot_polygon_comparison(
     return fig
 
 
-# ── helper: draw boundary in normalised coords ───────────────────────────
-
 def _draw_boundary(ax, norm_polygon: Polygon):
     x, y = norm_polygon.exterior.xy
     ax.fill(x, y, color=FILL_COLOR, zorder=0)
@@ -100,14 +96,11 @@ def _draw_urban(ax, inner_polygon: Optional[Polygon]):
     x, y = inner_polygon.exterior.xy
     ax.fill(x, y, color=URBAN_FILL, zorder=4)
     ax.plot(x, y, color=URBAN_BOUNDARY, lw=1.8, zorder=6)
-    # Label
     cx = inner_polygon.centroid.x
     cy = inner_polygon.centroid.y
     ax.text(cx, cy, "urban\ncore", ha="center", va="center",
             fontsize=7, color=URBAN_BOUNDARY, fontweight="bold", zorder=7)
 
-
-# ── helpers for parametric curves ─────────────────────────────────────────
 
 def _draw_curves(ax, curves, color, lw=0.9):
     """Plot a list of (x_arr, y_arr) parametric curves."""
@@ -115,8 +108,6 @@ def _draw_curves(ax, curves, color, lw=0.9):
         if len(xc) > 1:
             ax.plot(xc, yc, color=color, linewidth=lw, zorder=3)
 
-
-# ── Figure 2 ──────────────────────────────────────────────────────────────
 
 def plot_streamlines(
     XX, YY, Psi,
@@ -161,8 +152,6 @@ def plot_streamlines(
     return fig
 
 
-# ── Figure 3 ──────────────────────────────────────────────────────────────
-
 def plot_equipotentials(
     XX, YY, Phi,
     norm_polygon: Polygon,
@@ -203,8 +192,6 @@ def plot_equipotentials(
         logger.info("Saved %s + %s", FIG_DIR / filename, FIG_DIR / pdf_name)
     return fig
 
-
-# ── Figure 4 ──────────────────────────────────────────────────────────────
 
 def plot_combined(
     XX, YY, Psi, Phi,
@@ -252,10 +239,6 @@ def plot_combined(
     return fig
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# Terrain-informed figures (Figures 5 & 6)
-# ══════════════════════════════════════════════════════════════════════════
-
 def plot_terrain_combined(
     XX, YY, Psi_t, Phi_t,
     norm_polygon: Polygon,
@@ -284,7 +267,6 @@ def plot_terrain_combined(
             ax.contour(XX, YY, data, levels=levels,
                        colors=color, linewidths=0.7, zorder=3)
 
-    # Mark high / low elevation vertices and gradient arrow
     if terrain_info is not None and z_poly is not None:
         elevations = terrain_info.elevations
         i_high = int(np.argmax(elevations))
@@ -295,7 +277,6 @@ def plot_terrain_combined(
                 ms=12, zorder=10, label=f"Low ({elevations[i_low]:.0f} m)")
         ax.legend(loc="lower right", fontsize=10, framealpha=0.9)
 
-        # Gradient arrow at centre
         valid_psi = np.isfinite(Psi_t)
         if valid_psi.any():
             cx = np.mean(XX[valid_psi])
@@ -382,10 +363,6 @@ def plot_flow_comparison(
     return fig
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# Urban-obstacle figures (Figures 7 & 8)
-# ══════════════════════════════════════════════════════════════════════════
-
 def plot_urban_flow(
     XX, YY, Psi_u, Phi_u,
     norm_polygon_outer: Polygon,
@@ -423,15 +400,12 @@ def plot_urban_flow(
             if psi_ref_range is not None:
                 lo, hi = psi_ref_range
             else:
-                # Clip to central 90% to suppress dipole spike near obstacle
                 lo = np.nanpercentile(data, 5)
                 hi = np.nanpercentile(data, 95)
             levels = np.linspace(lo, hi, n_levels + 2)[1:-1]
-            # Clip data so extreme dipole values don't create dense spirals
             ax.contour(XX, YY, np.clip(data, lo, hi), levels=levels,
                        colors=color, linewidths=lw, zorder=3)
 
-    # Annotate circle approximation in ℍ → physical coords (informational)
     if obstacle is not None and norm_polygon_inner is not None:
         cx = norm_polygon_inner.centroid.x
         cy = norm_polygon_inner.centroid.y
@@ -488,11 +462,8 @@ def plot_road_flow(
             ax.contour(XX, YY, data, levels=levels,
                        colors=color, linewidths=lw, zorder=3)
 
-    # Annotate vortex positions in the physical (normalised) domain
     if road_info is not None and norm_scale > 0:
         from .sc_solver import sc_map_single
-        # road_info.vortices has (zeta, Gamma) in ℍ; convert to z via forward map
-        # We mark them at the intersection positions (UTM → normalised) instead
         coords_utm = road_info.intersection_positions_utm
         z_norm = (coords_utm[:, 0] + 1j * coords_utm[:, 1] - norm_center) / norm_scale
         for k, (zn, (_, Gamma)) in enumerate(
@@ -553,7 +524,6 @@ def plot_four_way_comparison(
         (Psi_road,    ROAD_STREAM,    r"(d) Road-vortex  (OSM intersections)", None),
     ]
 
-    # Compute a shared ψ range from uniform flow for consistent levels
     ref_lo = np.nanpercentile(Psi_uniform, 5) if np.isfinite(Psi_uniform).any() else None
     ref_hi = np.nanpercentile(Psi_uniform, 95) if np.isfinite(Psi_uniform).any() else None
 
@@ -564,7 +534,6 @@ def plot_four_way_comparison(
         valid = np.isfinite(psi)
         if valid.any():
             if ref_lo is not None and inner is not None:
-                # Urban panel: clip to uniform range to suppress dipole spike
                 lo, hi = ref_lo, ref_hi
                 plot_data = np.clip(psi, lo, hi)
             else:
