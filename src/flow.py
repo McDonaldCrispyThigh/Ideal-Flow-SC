@@ -1,16 +1,3 @@
-"""
-flow.py
-=======
-Compute ψ (stream function) and φ (velocity potential) on a grid
-covering the polygon **in normalised coordinates** by numerically
-inverting the SC map.
-
-Default complex potential in ℍ:  W(ζ) = U·ζ
-Terrain-informed potential:      W(ζ) = U·ζ + source/sink terms
-
-For each grid point z ∈ Ω (normalised coords) we solve f(ζ) = z for ζ ∈ ℍ,
-then evaluate W(ζ) to obtain φ = Re(W) and ψ = Im(W).
-"""
 
 from __future__ import annotations
 
@@ -43,19 +30,6 @@ def compute_curves_forward(
     potential_fn: Optional[PotentialFn] = None,
     U: float = 1.0,
 ) -> Tuple[list, list]:
-    """Compute streamline and equipotential curves via the forward SC map.
-
-    For uniform flow W(ζ) = Uζ:
-      - streamlines   are Im(ζ) = const  (horizontal lines in ℍ)
-      - equipotentials are Re(ζ) = const  (vertical half-lines in ℍ)
-
-    Each curve is mapped forward z = f(ζ) and clipped to *norm_polygon*.
-
-    Returns
-    -------
-    stream_curves : list of (x_arr, y_arr) arrays - one per streamline
-    equip_curves  : list of (x_arr, y_arr) arrays - one per equipotential
-    """
     from shapely.geometry import LineString
 
     if potential_fn is None:
@@ -130,11 +104,6 @@ def sc_inverse_single(
     *,
     maxfev: int = 800,
 ) -> complex | None:
-    """Find ζ ∈ ℍ such that f(ζ) = z_target.
-
-    Tries the warm-start guess first, then falls back to a grid of
-    initial guesses if needed.  Returns None if all fail.
-    """
     def residual(xy):
         zeta = xy[0] + 1j * xy[1]
         fz = sc_map_single(zeta, params, n_pts=250)
@@ -170,28 +139,6 @@ def compute_flow_grid(
     zeta_cache: Optional[np.ndarray] = None,
     n_zeta: int = 120,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Compute ψ and φ on a grid over *norm_polygon* (normalised coords).
-
-    Uses a **forward-map** approach to avoid the unreliable inverse Newton
-    solver.  A dense grid of ζ values in the upper half-plane is mapped
-    forward to z-space via f(ζ), potentials are evaluated at those scattered
-    points, and the result is interpolated to the regular output grid.
-
-    Parameters
-    ----------
-    norm_polygon : Shapely polygon in the **normalised** coordinate system.
-    params       : solved SC parameters.
-    n_grid       : output grid resolution per axis.
-    U            : free-stream speed.
-    potential_fn : callable ``ζ → W(ζ)``.  Defaults to ``W = Uζ``.
-    zeta_cache   : unused (kept for API compatibility).
-    n_zeta       : resolution of the ζ sampling grid per axis.
-
-    Returns
-    -------
-    XX, YY, Psi, Phi, Zeta - all shape ``(n_grid, n_grid)``.
-    Psi, Phi, and Zeta are NaN outside the polygon.
-    """
     if potential_fn is None:
         from .terrain import uniform_potential
         potential_fn = lambda zeta: uniform_potential(zeta, U)
@@ -261,28 +208,6 @@ def compute_flow_grid_urban(
     terrain_sources=None,
     n_zeta: int = 120,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Compute ψ and φ for the doubly-connected domain Ω_outer \\ Ω_inner.
-
-    Uses the same forward-map + interpolation strategy as compute_flow_grid.
-    Points inside the inner polygon (urban core) are masked out after
-    interpolation.
-
-    Parameters
-    ----------
-    norm_polygon_outer : outer (Boulder) boundary in normalised coords.
-    norm_polygon_inner : inner (urban core) boundary in normalised coords.
-    params             : solved outer SC parameters.
-    obstacle           : UrbanObstacle from compute_urban_obstacle().
-    n_grid             : grid resolution per axis.
-    U                  : free-stream speed.
-    terrain_sources    : optional list of (ζ, Q) terrain source/sink pairs.
-    n_zeta             : ζ sampling grid resolution per axis.
-
-    Returns
-    -------
-    XX, YY, Psi, Phi, Zeta - all shape (n_grid, n_grid).
-    Points outside outer polygon or inside inner polygon are NaN.
-    """
     from .sc_solver_dc import urban_potential, urban_terrain_potential
 
     if terrain_sources:

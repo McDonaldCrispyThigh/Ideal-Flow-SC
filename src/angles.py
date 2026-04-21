@@ -1,9 +1,3 @@
-"""
-angles.py
-=========
-Interior-angle computation for a polygon given as complex vertices.
-Angles are returned in units of π.
-"""
 
 from __future__ import annotations
 
@@ -14,10 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 def interior_angles_pi(z_poly: np.ndarray) -> np.ndarray:
-    """Interior angles of a CCW simple polygon, in units of π.
-
-    For convex vertex 0 < α < 1; reflex vertex 1 < α < 2.
-    """
     n = len(z_poly)
     alphas = np.empty(n)
 
@@ -31,7 +21,6 @@ def interior_angles_pi(z_poly: np.ndarray) -> np.ndarray:
 
 
 def verify_angle_sum(alphas: np.ndarray, tol: float = 1e-6) -> bool:
-    """Check  Σ αₖ = n − 2."""
     n = len(alphas)
     expected = n - 2
     actual = alphas.sum()
@@ -45,5 +34,4 @@ def verify_angle_sum(alphas: np.ndarray, tol: float = 1e-6) -> bool:
 
 
 def sc_exponents(alphas: np.ndarray) -> np.ndarray:
-    """Return βₖ = αₖ − 1  (SC integrand exponents)."""
     return alphas - 1.0

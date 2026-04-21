@@ -1,16 +1,3 @@
-"""
-main.py - Full pipeline for the SC conformal-mapping fluid-flow project.
-
-Usage
------
-    python main.py --shapefile data/raw/tl_2025_08_place
-    python main.py --demo              # built-in hexagon, no shapefile needed
-    python main.py --demo --grid 40    # quick test
-    python main.py --shapefile data/raw/tl_2025_08_place --terrain
-    python main.py --shapefile data/raw/tl_2025_08_place --urban
-    python main.py --shapefile data/raw/tl_2025_08_place --roads
-    python main.py --shapefile data/raw/tl_2025_08_place --terrain --urban --roads
-"""
 
 from __future__ import annotations
 

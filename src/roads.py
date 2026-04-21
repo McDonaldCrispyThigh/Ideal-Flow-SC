@@ -1,45 +1,3 @@
-"""
-roads.py
-========
-Download Boulder road network from OSM, find major intersections,
-and build a road-informed complex potential via point vortices in ℍ.
-
-Approach
---------
-1.  Download the road graph within the Boulder polygon via osmnx,
-    filtered to arterials and above (primary, secondary, tertiary).
-2.  Find intersection nodes with degree ≥ 3, select the top-N by
-    degree (degree = number of roads meeting = traffic-intensity proxy).
-3.  Map each intersection UTM → normalised z-plane → upper half-plane ℍ
-    via the SC inverse map.
-4.  Place a point vortex at each ℍ position with an image vortex
-    at the mirror point below ℝ.
-
-Complex potential
------------------
-    W_road(ζ) = Σ_k  (−i·Γ_k / 2π) · [log(ζ − s_k) + log(ζ − s̄_k)]
-
-where s_k ∈ ℍ is the ζ-position of intersection k and Γ_k is its
-circulation strength (proportional to node degree).
-
-The image term ensures ψ = Im(W) = 0 on the real axis ℝ, which maps
-to the polygon boundary ∂Ω, preserving the no-penetration condition.
-
-Verification:  on ζ = x real,
-    Im( (−i·Γ/2π)·[log(x − s) + log(x − s̄)] )
-    = (Γ/2π) · [arg(x − s) + arg(x − s̄)]
-    = (Γ/2π) · [−arctan(b/(x−a)) + arctan(b/(x−a))] = 0  ✓
-where s = a + ib, b > 0.
-
-Physical motivation
--------------------
-Major road intersections generate local circulation in urban
-atmospheric flow (traffic turbulence, building-induced channelling,
-heat-island convection).  Positive (CCW) vortices at northern
-intersections and negative (CW) vortices at southern intersections
-approximate the vortex-pair structure observed in Boulder's prevailing
-westerly flow regime.
-"""
 
 from __future__ import annotations
 
@@ -56,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RoadInfo:
-    """Road network intersection data and derived vortex parameters."""
     n_intersections: int
     intersection_positions_utm: np.ndarray
     intersection_degrees: np.ndarray
@@ -69,20 +26,6 @@ def get_road_intersections(
     n_max: int = 12,
     road_types: tuple = ("primary", "secondary", "tertiary"),
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-    """Get major road intersection positions (UTM) and node degrees.
-
-    Parameters
-    ----------
-    polygon_utm : Shapely Polygon in UTM Zone 13N (EPSG:26913).
-    method      : 'osmnx' (live OSM) or 'fallback' (hardcoded Boulder grid).
-    n_max       : maximum number of intersections to return.
-    road_types  : OSM highway tags to include.
-
-    Returns
-    -------
-    (coords, degrees) where coords is (M, 2) UTM and degrees is (M,),
-    or None on failure.
-    """
     if method == "osmnx":
         try:
             return _osmnx_intersections(polygon_utm, n_max, road_types)
@@ -97,7 +40,6 @@ def _osmnx_intersections(
     n_max: int,
     road_types: tuple,
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-    """Download road graph from OSM and extract high-degree intersections."""
     import osmnx as ox
     from pyproj import Transformer
     from shapely.geometry import Point, Polygon as ShapelyPolygon
@@ -145,10 +87,6 @@ def _fallback_intersections(
     polygon_utm,
     n_max: int,
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-    """Hardcoded major Boulder intersections as fallback.
-
-    WGS84 (lon, lat) coords for key arterial crossings.
-    """
     _LONLAT = [
         (-105.2835, 40.0186),
         (-105.2835, 40.0135),
@@ -196,24 +134,6 @@ def compute_road_info(
     delta_min: float = 0.15,
     road_types: tuple = ("primary", "secondary", "tertiary"),
 ) -> Optional[RoadInfo]:
-    """Full pipeline: OSM intersections → normalised → SC inverse → vortices.
-
-    Parameters
-    ----------
-    polygon_utm  : simplified Boulder polygon in UTM (EPSG:26913).
-    center       : normalisation shift (complex) used in polygon_to_complex.
-    scale        : normalisation scale used in polygon_to_complex.
-    sc_params    : solved SC parameters for the outer polygon.
-    method       : 'osmnx' or 'fallback'.
-    n_max        : max intersections to use.
-    Gamma_scale  : maximum vortex strength (fraction of U = 1).
-    delta_min    : minimum Im(s_k) for any vortex in ℍ.
-    road_types   : OSM highway tags.
-
-    Returns
-    -------
-    RoadInfo with vortex positions and strengths, or None on failure.
-    """
     result = get_road_intersections(polygon_utm, method=method,
                                     n_max=n_max, road_types=road_types)
     if result is None:
@@ -271,19 +191,6 @@ def road_potential(
     U: float,
     vortices: List[Tuple[complex, float]],
 ) -> complex:
-    r"""Evaluate the road-informed complex potential at a single ζ.
-
-        W(ζ) = U·ζ  +  Σ_k (−i·Γ_k/2π)·[log(ζ−s_k) + log(ζ−s̄_k)]
-
-    The image term log(ζ−s̄_k) ensures ψ = 0 on ℝ:
-        Im((−i·Γ/2π)·[log(x−s) + log(x−s̄)]) = 0  for x ∈ ℝ  ✓
-
-    Parameters
-    ----------
-    zeta    : evaluation point in ℍ.
-    U       : free-stream speed.
-    vortices: list of (s_k, Γ_k) vortex descriptors.
-    """
     W = U * zeta
     for s, Gamma in vortices:
         d1 = zeta - s

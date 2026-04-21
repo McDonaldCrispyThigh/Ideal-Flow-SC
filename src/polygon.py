@@ -1,10 +1,3 @@
-"""
-polygon.py
-==========
-Load the Boulder city boundary from a TIGER/Line shapefile,
-reproject to UTM Zone 13N (metres), and simplify to a manageable
-number of vertices for the Schwarz-Christoffel solver.
-"""
 
 from __future__ import annotations
 
@@ -24,7 +17,6 @@ def load_boulder_polygon(
     name_field: str = "NAME",
     name_value: str = "Boulder",
 ) -> Polygon:
-    """Load Boulder city boundary and reproject to UTM 13N (metres)."""
     path = Path(shapefile_path)
     if path.is_dir():
         shps = list(path.glob("*.shp"))
@@ -58,7 +50,6 @@ def simplify_polygon(
     min_vertices: int = 10,
     max_vertices: int = 20,
 ) -> Polygon:
-    """Simplify polygon via Douglas-Peucker with adaptive tolerance."""
     lo, hi = 1.0, tolerance * 20.0
     tol = tolerance
     simplified = polygon.simplify(tol, preserve_topology=True)
@@ -83,10 +74,6 @@ def polygon_to_complex(
     polygon: Polygon,
     normalise: bool = True,
 ) -> Tuple[np.ndarray, complex, float]:
-    """Convert Shapely polygon → complex array.
-
-    Returns (z, center, scale) where z = (raw - center) / scale.
-    """
     coords = np.array(polygon.exterior.coords)[:-1]
     z = coords[:, 0] + 1j * coords[:, 1]
 
@@ -102,14 +89,12 @@ def polygon_to_complex(
 
 
 def complex_to_polygon(z_poly: np.ndarray) -> Polygon:
-    """Create a Shapely Polygon from complex vertices."""
     coords = [(z.real, z.imag) for z in z_poly]
     coords.append(coords[0])
     return Polygon(coords)
 
 
 def ensure_ccw(z_poly: np.ndarray) -> np.ndarray:
-    """Ensure vertices are counter-clockwise (positive signed area)."""
     x, y = z_poly.real, z_poly.imag
     signed_area = 0.5 * np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y)
     if signed_area < 0:
@@ -124,15 +109,6 @@ def smooth_extreme_angles(
     alpha_max: float = 1.85,
     min_vertices: int = 10,
 ) -> np.ndarray:
-    """Remove vertices whose interior angle is outside [alpha_min, alpha_max] * pi.
-
-    Both near-cusp vertices (very small angle) and near-reflex vertices
-    (angle close to 2pi) cause the SC crowding problem: pre-vertices cluster
-    within machine epsilon of each other, making all integrals inaccurate.
-    Dropping such a vertex joins its two adjacent sides into one straight
-    segment, only slightly altering the polygon shape while dramatically
-    improving SC conditioning.
-    """
     from src.angles import interior_angles_pi
 
     changed = True

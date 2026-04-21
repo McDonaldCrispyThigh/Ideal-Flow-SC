@@ -1,15 +1,3 @@
-"""
-urban.py
-========
-Acquire and process the built-up / urban-core polygon for Boulder, CO.
-
-The polygon is used as an interior obstacle in the doubly-connected flow
-model: fluid cannot penetrate the urban core, so streamlines deflect around
-it.
-
-Data source: OpenStreetMap via osmnx (landuse and building polygons).
-Fallback   : hard-coded approximate downtown Boulder polygon in UTM 13N.
-"""
 
 from __future__ import annotations
 
@@ -38,7 +26,6 @@ _DOWNTOWN_UTM = np.array([
 
 
 def _fallback_urban_polygon() -> Polygon:
-    """Hard-coded approximate downtown Boulder polygon in UTM 13N."""
     return Polygon(_DOWNTOWN_UTM)
 
 
@@ -49,22 +36,6 @@ def get_urban_polygon(
     margin_fraction: float = 0.04,
     epsg_utm: int = 26913,
 ) -> Optional[Polygon]:
-    """Return a simplified urban-core polygon in UTM coordinates.
-
-    Parameters
-    ----------
-    boulder_polygon_utm : outer Boulder boundary in UTM (EPSG:26913).
-    method              : "osmnx" (download from OSM) or "fallback".
-    n_vertices          : target vertex count after simplification (6-10).
-    margin_fraction     : shrink from outer boundary by this fraction of
-                          the outer polygon's linear scale, to keep inner
-                          polygon strictly inside.
-    epsg_utm            : EPSG code of the UTM projection.
-
-    Returns
-    -------
-    Polygon in UTM coordinates, or None on failure.
-    """
     poly: Optional[Polygon] = None
 
     if method == "osmnx":
@@ -97,7 +68,6 @@ def _get_from_osmnx(
     boulder_polygon_utm: Polygon,
     epsg_utm: int = 26913,
 ) -> Optional[Polygon]:
-    """Download urban landuse polygons from OSM and return their union."""
     try:
         import osmnx as ox
         from pyproj import Transformer
@@ -146,7 +116,6 @@ def _clip_inside(
     outer: Polygon,
     margin_fraction: float = 0.04,
 ) -> Optional[Polygon]:
-    """Clip inner polygon to outer and shrink by a margin."""
     margin = outer.length * margin_fraction * 0.5
     outer_shrunk = outer.buffer(-margin)
 
@@ -162,7 +131,6 @@ def _clip_inside(
 
 
 def _simplify_to_n(poly: Polygon, n_target: int) -> Polygon:
-    """Douglas-Peucker simplification via binary search to hit n_target vertices."""
     hull = poly.convex_hull
     if not isinstance(hull, Polygon):
         hull = poly
@@ -192,11 +160,6 @@ def polygon_to_complex_inner(
     center: complex,
     scale: float,
 ) -> np.ndarray:
-    """Convert inner polygon to the same normalised complex frame as outer.
-
-    Uses the same center / scale returned by polygon_to_complex() so
-    both polygons share the same coordinate system.
-    """
     coords = np.array(inner_utm.exterior.coords)[:-1]
     z = coords[:, 0] + 1j * coords[:, 1]
     return (z - center) / scale

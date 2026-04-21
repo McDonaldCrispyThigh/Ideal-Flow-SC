@@ -1,14 +1,3 @@
-"""
-sc_solver.py
-============
-Schwarz-Christoffel parameter problem solver and forward-map evaluator.
-
-    f(ζ) = A + C ∫₀^ζ  ∏ₖ (t − ζₖ)^(αₖ − 1)  dt
-
-Vectorised with NumPy for performance.  The Möbius normalisation fixes
-three pre-vertices; the remaining n − 3 are found by nonlinear least
-squares on the side-length ratios.
-"""
 
 from __future__ import annotations
 
@@ -23,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SCParameters:
-    """Solved SC mapping parameters."""
     zk: np.ndarray
     alphas: np.ndarray
     betas: np.ndarray
@@ -33,10 +21,6 @@ class SCParameters:
 
 
 def _sc_prod_real(t: np.ndarray, zk: np.ndarray, betas: np.ndarray) -> np.ndarray:
-    """Evaluate ∏ₖ (t − ζₖ)^βₖ for real t (vectorised over t).
-
-    t : (N,)   zk : (n,)   betas : (n,)   → result : (N,) complex
-    """
     diffs = t[:, None] - zk[None, :]
     signs = np.where(diffs < 0, np.pi, 0.0)
     log_abs = betas[None, :] * np.log(np.abs(diffs) + 1e-300)
@@ -45,10 +29,6 @@ def _sc_prod_real(t: np.ndarray, zk: np.ndarray, betas: np.ndarray) -> np.ndarra
 
 
 def _sc_prod_complex(t: np.ndarray, zk: np.ndarray, betas: np.ndarray) -> np.ndarray:
-    """Evaluate ∏ₖ (t − ζₖ)^βₖ for complex t (vectorised over t).
-
-    Uses the principal branch of log.
-    """
     diffs = t[:, None] - zk[None, :]
     return np.prod(np.exp(betas[None, :] * np.log(diffs)), axis=1)
 
@@ -56,7 +36,6 @@ def _sc_prod_complex(t: np.ndarray, zk: np.ndarray, betas: np.ndarray) -> np.nda
 _GL_CACHE: dict[int, tuple] = {}
 
 def _gl_nodes(n_pts: int):
-    """Cached Gauss-Legendre nodes and weights."""
     if n_pts not in _GL_CACHE:
         _GL_CACHE[n_pts] = np.polynomial.legendre.leggauss(n_pts)
     return _GL_CACHE[n_pts]
@@ -65,7 +44,6 @@ def _gl_nodes(n_pts: int):
 def integrate_real(a: float, b: float,
                    zk: np.ndarray, betas: np.ndarray,
                    n_pts: int = 500) -> complex:
-    """∫_a^b ∏ₖ (t−ζₖ)^βₖ dt   along the real axis."""
     nodes, weights = _gl_nodes(n_pts)
     mid  = 0.5 * (a + b)
     half = 0.5 * (b - a)
@@ -77,7 +55,6 @@ def integrate_real(a: float, b: float,
 def integrate_complex(za: complex, zb: complex,
                       zk: np.ndarray, betas: np.ndarray,
                       n_pts: int = 400) -> complex:
-    """∫_{za}^{zb} ∏ₖ (t−ζₖ)^βₖ dt   along a straight line in ℂ."""
     nodes, weights = _gl_nodes(n_pts)
     mid  = 0.5 * (za + zb)
     half = 0.5 * (zb - za)
@@ -88,13 +65,11 @@ def integrate_complex(za: complex, zb: complex,
 
 def _side_length(zk_a: float, zk_b: float,
                  zk: np.ndarray, betas: np.ndarray) -> float:
-    """| ∫_{zk_a}^{zk_b} integrand dt |"""
     return abs(integrate_real(zk_a, zk_b, zk, betas))
 
 
 def _all_side_lengths(zk: np.ndarray, betas: np.ndarray,
                       R: float = 5000.0) -> np.ndarray:
-    """Compute side lengths for all n sides including the infinite one."""
     n = len(zk)
     lengths = np.empty(n)
     for i in range(n - 1):
@@ -112,11 +87,6 @@ def solve_parameters(
     maxiter: int = 2000,
     tol: float = 1e-10,
 ) -> SCParameters:
-    """Solve the SC parameter problem.
-
-    Möbius normalisation: ζ₀ = −1, ζ₁ = 0, ζ_{n−1} = 1.
-    Free parameters: ζ₂, …, ζ_{n−2}  (must satisfy −1 < ζ₀ < ζ₁ < … < ζ_{n−1} = 1).
-    """
     n = len(z_poly)
     betas = alphas - 1.0
 
@@ -212,24 +182,6 @@ def solve_parameters(
 
 
 def _solve_AC(zk, betas, z_poly):
-    """Determine C from real-axis side integrals, then A from a safe reference.
-
-    Two-stage approach:
-
-    Stage 1 — C from real-axis side integrals (no branch-point issues):
-        C * ∫_{zk[k]}^{zk[k+1]} integrand dt  =  z_poly[k+1] − z_poly[k]
-    Solved by least-squares over all n−1 finite sides.  The integrand on the
-    real axis is evaluated with `_sc_prod_real` (accurate GL quadrature).
-
-    Stage 2 — A from a safe real-axis midpoint:
-        Pick mid = midpoint of the widest finite pre-vertex interval (well
-        separated from all branch points).  Compute f(mid) by accumulating
-        from the nearest polygon vertex along the real axis, then compute
-        A = f(mid+i·h) − C · ∫_{_ZETA_REF}^{mid+i·h} integrand dt
-    where h = 0.3 keeps the complex path far from the real-axis singularities.
-    The vertical ascent from mid to mid+i·h is safe because mid is not a
-    branch point.
-    """
     n = len(z_poly)
 
     sides_z = np.diff(np.append(z_poly, z_poly[0]))
@@ -276,11 +228,6 @@ _ZETA_REF = 0.0 + 0.5j
 
 
 def sc_map_single(zeta: complex, params: SCParameters, n_pts: int = 400) -> complex:
-    """Evaluate f(ζ) = A + C ∫_{_ZETA_REF}^{ζ} integrand dt.
-
-    A = f(_ZETA_REF) is stored in params.A.
-    Integration path stays in ℍ via an L-shaped route.
-    """
     zk, betas, A, C = params.zk, params.betas, params.A, params.C
 
     if abs(zeta.imag) < 1e-12:
@@ -302,5 +249,4 @@ def sc_map_single(zeta: complex, params: SCParameters, n_pts: int = 400) -> comp
 
 
 def sc_map(zeta_arr: np.ndarray, params: SCParameters, n_pts: int = 400) -> np.ndarray:
-    """Evaluate the SC forward map on an array of complex points."""
     return np.array([sc_map_single(z, params, n_pts) for z in zeta_arr])

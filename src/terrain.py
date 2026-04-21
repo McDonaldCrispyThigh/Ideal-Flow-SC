@@ -1,44 +1,3 @@
-"""
-terrain.py
-==========
-Query DEM elevation data and build a terrain-informed complex potential.
-
-Approach (RBF + distributed source/sink):
-    1.  Sample elevation at a dense set of points (vertices + boundary
-        interpolation + interior grid) via the USGS 3DEP EPQS API.
-        Falls back to a linear model of Boulder's topography if the API
-        is unreachable.
-    2.  Fit a 2-D thin-plate-spline RBF surface  e(x,y)  to all samples.
-        This is far more faithful to the actual terrain than a linear plane.
-    3.  Evaluate the terrain gradient  ∇e(xₖ, yₖ)  at each polygon vertex
-        via finite differences on the RBF surface.
-    4.  Place one source/sink singularity per vertex in the upper half-plane
-        ℍ.  The strength is proportional to the projection of ∇e onto the
-        free-stream direction; the sign encodes whether terrain pushes
-        (source) or draws (sink) fluid at that location.
-
-Complex potential
------------------
-    W(ζ) = U·ζ  +  Σₖ  (qₖ / 2π) · [ log(ζ − sₖ) + log(ζ − s̄ₖ) ]
-
-where sₖ = ζₖ[k] + δj  (vertex k lifted slightly into ℍ)
-      qₖ  = Q_scale · (∂e/∂x · cos θ_flow + ∂e/∂y · sin θ_flow)  at vertex k
-      δ   = imaginary lift above ℝ
-and s̄ₖ denotes the complex conjugate (image below ℝ).
-
-The image terms ensure ψ = 0 on ℝ, preserving the no-penetration
-boundary condition on the polygon boundary.
-
-Improvement over the previous linear-plane approach
-----------------------------------------------------
-* RBF thin-plate spline captures non-linear terrain (R² ≈ 0.90 vs ~0.63
-  with a linear fit for Boulder's actual topography).
-* Per-vertex sources/sinks respect local slope rather than using a single
-  global gradient estimate.
-* The resulting terrain correction is physically more faithful: each
-  polygon vertex acts as a local source or sink depending on whether the
-  local terrain directs flow into or out of that part of the boundary.
-"""
 
 from __future__ import annotations
 
@@ -62,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TerrainInfo:
-    """Holds everything the terrain-aware potential needs."""
     elevations: np.ndarray
     grad_xy: Tuple[float, float]
     theta_downhill: float
@@ -84,7 +42,6 @@ def _get_transformer(epsg_source: int = 26913) -> Transformer:
 
 
 def _query_epqs(lon: float, lat: float, timeout: float = 12.0) -> Optional[float]:
-    """Query a single elevation from USGS EPQS.  Returns None on failure."""
     url = _EPQS_URL.format(lon=lon, lat=lat)
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "APPM4360-SC-Flow/1.0"})
@@ -103,11 +60,6 @@ def _sample_boundary_points(
     polygon_utm: Polygon,
     n_per_edge: int = 3,
 ) -> np.ndarray:
-    """Generate extra sample points along each polygon edge.
-
-    Returns array of shape (M, 2) in UTM coordinates.
-    Does NOT include the original vertices (those are queried separately).
-    """
     coords = np.array(polygon_utm.exterior.coords)
     pts = []
     for i in range(len(coords) - 1):
@@ -120,7 +72,6 @@ def _sample_interior_points(
     polygon_utm: Polygon,
     n_pts: int = 25,
 ) -> np.ndarray:
-    """Generate a grid of interior sample points inside the polygon."""
     minx, miny, maxx, maxy = polygon_utm.bounds
     side = int(np.ceil(np.sqrt(n_pts * 1.5)))
     xs = np.linspace(minx, maxx, side + 2)[1:-1]
@@ -143,10 +94,6 @@ def _batch_query_elevations(
     max_workers: int = 6,
     timeout: float = 15.0,
 ) -> np.ndarray:
-    """Query elevations for an array of UTM points using concurrent threads.
-
-    Returns array of elevations; NaN where the API fails.
-    """
     n = len(coords_utm)
     elevations = np.full(n, np.nan)
     if n == 0:
@@ -179,7 +126,6 @@ def get_vertex_elevations(
     polygon_utm: Polygon,
     epsg_source: int = 26913,
 ) -> np.ndarray:
-    """Return elevation (m) at each vertex. NaN where unavailable."""
     coords = np.array(polygon_utm.exterior.coords)[:-1]
     elevations = _batch_query_elevations(coords, epsg_source)
 
@@ -197,13 +143,6 @@ def get_dense_elevations(
     epsg_source: int = 26913,
     max_workers: int = 6,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Query elevations at vertices + boundary interpolation + interior grid.
-
-    Returns
-    -------
-    all_coords : (M, 2)  all sample points in UTM
-    all_elevs  : (M,)    elevations in metres (NaN filled with fallback)
-    """
     vertex_coords = np.array(polygon_utm.exterior.coords)[:-1]
     boundary_coords = _sample_boundary_points(polygon_utm, n_per_edge)
     interior_coords = _sample_interior_points(polygon_utm, n_interior)
@@ -231,10 +170,6 @@ def get_dense_elevations(
 
 
 def _boulder_fallback(coords_utm: np.ndarray) -> np.ndarray:
-    """Linear model of Boulder topography (west ≈ 1770 m, east ≈ 1570 m).
-
-    Based on USGS 1/3 arc-second DEM statistics for Boulder.
-    """
     x = coords_utm[:, 0]
     x_min, x_max = x.min(), x.max()
     span = x_max - x_min + 1e-6
@@ -244,12 +179,6 @@ def _boulder_fallback(coords_utm: np.ndarray) -> np.ndarray:
 
 
 def _fit_rbf(all_coords: np.ndarray, all_elevs: np.ndarray) -> RBFInterpolator:
-    """Fit a 2-D thin-plate-spline RBF surface to elevation data.
-
-    Normalises coordinates to O(1) for numerical stability.
-    Returns a callable that accepts (N, 2) UTM arrays and returns (N,)
-    elevations.  A closure wraps the internal normalisation.
-    """
     scale = all_coords.std(axis=0).mean() + 1e-9
     centre = all_coords.mean(axis=0)
     coords_n = (all_coords - centre) / scale
@@ -297,18 +226,6 @@ def _vertex_gradients(
     rbf_eval,
     h: float = 100.0,
 ) -> np.ndarray:
-    """Compute ∇e = (∂e/∂x, ∂e/∂y) at each vertex via centred finite differences.
-
-    Parameters
-    ----------
-    vertex_coords : (n_v, 2) UTM coordinates.
-    rbf_eval      : callable (N, 2) → (N,) elevation interpolant.
-    h             : finite-difference step in metres (default 100 m).
-
-    Returns
-    -------
-    grads : (n_v, 2)  each row is (∂e/∂x, ∂e/∂y) at that vertex.
-    """
     n_v = len(vertex_coords)
     grads = np.zeros((n_v, 2))
 
@@ -334,20 +251,6 @@ def compute_terrain_info(
     max_workers: int = 6,
     epsg_source: int = 26913,
 ) -> TerrainInfo:
-    """Full pipeline: dense elevation query → RBF surface → per-vertex sources.
-
-    Parameters
-    ----------
-    polygon_utm     : simplified polygon in UTM coordinates.
-    sc_params       : solved SC parameters (for pre-vertex locations).
-    delta           : imaginary lift for source/sink above ℝ.
-    Q_scale         : maximum source strength as fraction of free-stream.
-    flow_direction  : free-stream direction in radians (0 = +x = east).
-    n_per_edge      : extra sample points per polygon edge.
-    n_interior      : interior sample points for the RBF fit.
-    max_workers     : concurrent API threads.
-    epsg_source     : CRS of the UTM polygon.
-    """
     all_coords, all_elevs = get_dense_elevations(
         polygon_utm, n_per_edge=n_per_edge, n_interior=n_interior,
         epsg_source=epsg_source, max_workers=max_workers,
@@ -421,13 +324,6 @@ def terrain_potential(
     U: float,
     sources: List[Tuple[complex, float]],
 ) -> complex:
-    r"""Evaluate the terrain-informed complex potential at a single ζ.
-
-        W(ζ) = U·ζ  +  Σⱼ  (Qⱼ / 2π) · [ log(ζ − sⱼ) + log(ζ − s̄ⱼ) ]
-
-    Each source sⱼ in ℍ has an image s̄ⱼ below ℝ so that the stream
-    function vanishes on the real axis (no-penetration condition).
-    """
     W = U * zeta
     for s, Q in sources:
         d1 = zeta - s
@@ -441,5 +337,4 @@ def terrain_potential(
 
 
 def uniform_potential(zeta: complex, U: float = 1.0) -> complex:
-    """Original uniform potential: W(ζ) = U·ζ."""
     return U * zeta

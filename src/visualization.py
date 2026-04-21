@@ -1,17 +1,3 @@
-"""
-visualization.py
-================
-Publication-quality figures for the SC fluid-flow project.
-
-Figure 1 - Original vs. simplified polygon (UTM coords).
-Figure 2 - Streamlines  ψ = const  (normalised coords).
-Figure 3 - Equipotential lines  φ = const  (normalised coords).
-Figure 4 - Combined overlay of streamlines + equipotentials.
-Figure 5 - Terrain-informed streamlines (when --terrain is used).
-Figure 6 - Side-by-side: uniform flow vs. terrain flow.
-Figure 7 - Urban-obstacle doubly-connected flow (when --urban is used).
-Figure 8 - Three-way comparison: uniform / terrain / urban.
-"""
 
 from __future__ import annotations
 
@@ -52,7 +38,6 @@ def plot_polygon_comparison(
     save: bool = True,
     filename: str = "fig1_polygon_comparison.png",
 ) -> plt.Figure:
-    """Side-by-side: original vs. simplified polygon (in UTM coords)."""
     _ensure_fig_dir()
     fig, axes = plt.subplots(1, 2, figsize=(14, 6), dpi=150)
 
@@ -90,7 +75,6 @@ def _draw_boundary(ax, norm_polygon: Polygon):
 
 
 def _draw_urban(ax, inner_polygon: Optional[Polygon]):
-    """Draw the urban-core obstacle (filled + outlined)."""
     if inner_polygon is None:
         return
     x, y = inner_polygon.exterior.xy
@@ -103,7 +87,6 @@ def _draw_urban(ax, inner_polygon: Optional[Polygon]):
 
 
 def _draw_curves(ax, curves, color, lw=0.9):
-    """Plot a list of (x_arr, y_arr) parametric curves."""
     for xc, yc in curves:
         if len(xc) > 1:
             ax.plot(xc, yc, color=color, linewidth=lw, zorder=3)
@@ -117,13 +100,6 @@ def plot_streamlines(
     filename: str = "fig2_streamlines.png",
     stream_curves=None,
 ) -> plt.Figure:
-    """Streamline plot.
-
-    If *stream_curves* is provided (list of (x, y) arrays from the forward
-    SC map), they are plotted directly as parametric curves - this gives
-    artifact-free results without any grid interpolation.  Otherwise falls
-    back to a contour plot of *Psi*.
-    """
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(9, 9), dpi=150)
     _draw_boundary(ax, norm_polygon)
@@ -160,11 +136,6 @@ def plot_equipotentials(
     filename: str = "fig3_equipotentials.png",
     equip_curves=None,
 ) -> plt.Figure:
-    """Equipotential line plot.
-
-    Accepts optional *equip_curves* (forward-map parametric curves) for
-    artifact-free rendering; falls back to contour plot otherwise.
-    """
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(9, 9), dpi=150)
     _draw_boundary(ax, norm_polygon)
@@ -202,7 +173,6 @@ def plot_combined(
     stream_curves=None,
     equip_curves=None,
 ) -> plt.Figure:
-    """Overlay streamlines (blue) + equipotentials (red)."""
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
     _draw_boundary(ax, norm_polygon)
@@ -248,10 +218,6 @@ def plot_terrain_combined(
     save: bool = True,
     filename: str = "fig5_terrain_flow.png",
 ) -> plt.Figure:
-    """Terrain-informed streamlines (green) + equipotentials (amber).
-
-    Annotates with source/sink markers and gradient arrow.
-    """
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
     _draw_boundary(ax, norm_polygon)
@@ -320,15 +286,6 @@ def plot_flow_comparison(
     stream_color_right: str = TERRAIN_STREAM,
     equip_color_right: str = TERRAIN_EQUIP,
 ) -> plt.Figure:
-    """Side-by-side flow comparison.
-
-    Parameters
-    ----------
-    title_left / title_right : panel titles (override for non-terrain comparisons).
-    suptitle                 : figure-level title.
-    stream_color_right       : streamline colour for the right panel.
-    equip_color_right        : equipotential colour for the right panel.
-    """
     _ensure_fig_dir()
     fig, axes = plt.subplots(1, 2, figsize=(18, 8), dpi=150)
 
@@ -373,18 +330,6 @@ def plot_urban_flow(
     save: bool = True,
     filename: str = "fig7_urban_flow.png",
 ) -> plt.Figure:
-    """Streamlines + equipotentials for the doubly-connected domain.
-
-    The urban core is drawn as a filled purple obstacle.  Streamlines
-    visibly deflect around it, demonstrating the no-penetration condition.
-
-    Parameters
-    ----------
-    psi_ref_range : (lo, hi) tuple from the uniform-flow Psi grid.
-        When supplied, contour levels are drawn within this range only,
-        suppressing the dipole spike near the obstacle circle and making
-        the urban panel directly comparable to the uniform-flow figure.
-    """
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
 
@@ -446,10 +391,6 @@ def plot_road_flow(
     save: bool = True,
     filename: str = "fig9_road_flow.png",
 ) -> plt.Figure:
-    """Road-vortex flow: streamlines (brown) + equipotentials (teal).
-
-    Annotates vortex positions with direction markers (CCW/CW arrows).
-    """
     _ensure_fig_dir()
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
     _draw_boundary(ax, norm_polygon)
@@ -510,10 +451,6 @@ def plot_four_way_comparison(
     save: bool = True,
     filename: str = "fig11_four_way_comparison.png",
 ) -> plt.Figure:
-    """Four-panel comparison: uniform / terrain / urban / road-vortex.
-
-    The definitive summary figure showing all physical enhancements.
-    """
     _ensure_fig_dir()
     fig, axes = plt.subplots(1, 4, figsize=(30, 8), dpi=150)
 
@@ -571,11 +508,6 @@ def plot_three_way_comparison(
     save: bool = True,
     filename: str = "fig8_three_way_comparison.png",
 ) -> plt.Figure:
-    """Three-panel comparison: uniform / terrain-corrected / urban obstacle.
-
-    This is the key summary figure for the project report, showing how
-    each successive modelling enhancement changes the streamline pattern.
-    """
     _ensure_fig_dir()
     fig, axes = plt.subplots(1, 3, figsize=(24, 8), dpi=150)
 

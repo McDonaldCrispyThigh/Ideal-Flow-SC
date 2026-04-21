@@ -1,43 +1,3 @@
-"""
-sc_solver_dc.py
-===============
-Doubly-connected flow: urban core modelled as an interior obstacle.
-
-Mathematical approach
----------------------
-Step 1.  The outer SC map  f : ℍ → Ω_outer  is already solved by
-         sc_solver.py.  In ℍ the outer boundary collapses to ℝ and the
-         no-penetration condition ψ = 0 on ℝ is automatic.
-
-Step 2.  We map the inner (urban) polygon boundary into ℍ by applying
-         the inverse SC map to each of its vertices, obtaining a closed
-         curve  C ⊂ ℍ.
-
-Step 3.  We fit the minimum-enclosing circle of C:
-             centre ζ₀ ∈ ℍ,   radius a > 0.
-
-Step 4.  We add the potential for a circular obstacle of radius a
-         centred at ζ₀ inside ℍ, using the circle theorem plus a
-         method-of-images term so that ψ = 0 is preserved on ℝ:
-
-             W(ζ) = U·ζ  +  U·a²/(ζ − ζ₀)  +  U·a²/(ζ − ζ̄₀)
-
-         On ℝ  the last two terms are complex conjugates → imaginary
-         parts cancel → ψ = 0 ✓.
-         On |ζ − ζ₀| = a  the term U·a²/(ζ − ζ₀) = U·a·e^{−iθ} is
-         purely real → Im(W) ≈ U·Im(ζ₀) + O(a/Im(ζ₀)) = const ✓.
-
-Approximation quality
----------------------
-The error in the no-penetration condition on the actual curve C (vs.
-the fitted circle) is O(ε), where ε is the maximum relative deviation
-of C from the circle.  For a compact, roughly convex urban core the
-error is typically small.
-
-The error from the image term (which breaks the circle condition
-slightly) is O((a/Im(ζ₀))²), negligible when the obstacle is well
-inside ℍ.
-"""
 
 from __future__ import annotations
 
@@ -56,17 +16,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class UrbanObstacle:
-    """Circular obstacle in ℍ representing the urban core.
-
-    Attributes
-    ----------
-    zeta0  : centre of the enclosing circle in ℍ (Im > 0).
-    radius : radius a of the enclosing circle.
-    mapped_boundary : array of ζ values on the mapped inner boundary,
-                      shape (n₂,).  Useful for diagnostics.
-    inner_polygon_norm : inner polygon in the normalised physical frame
-                         (same coords as the rest of the flow grid).
-    """
     zeta0: complex
     radius: float
     mapped_boundary: np.ndarray
@@ -80,22 +29,6 @@ def compute_urban_obstacle(
     n_boundary_pts: int = 24,
     radius_margin: float = 1.15,
 ) -> Optional[UrbanObstacle]:
-    """Map the inner polygon into ℍ and fit a bounding circle.
-
-    Parameters
-    ----------
-    inner_polygon_norm : urban-core polygon in the *normalised* coordinate
-                         frame (same frame as outer SC solver).
-    outer_params       : solved outer SC parameters.
-    n_boundary_pts     : number of boundary points to map into ℍ.
-                         More points → better circle fit.
-    radius_margin      : multiply the fitted radius by this factor to
-                         guarantee the circle strictly encloses C.
-
-    Returns
-    -------
-    UrbanObstacle, or None if inverse mapping fails for too many points.
-    """
     boundary_pts = _sample_boundary(inner_polygon_norm, n_boundary_pts)
     logger.info("Mapping %d inner boundary points to ℍ …", len(boundary_pts))
 
@@ -157,20 +90,6 @@ def urban_potential(
     U: float,
     obstacle: UrbanObstacle,
 ) -> complex:
-    r"""Complex potential including the urban-core obstacle.
-
-        W(ζ) = U·ζ  +  U·a²/(ζ − ζ₀)  +  U·a²/(ζ − ζ̄₀)
-
-    The first term is uniform flow; the second enforces no-penetration on
-    the circle |ζ − ζ₀| = a (circle theorem); the third is its image below
-    ℝ, restoring ψ = 0 on ℝ.
-
-    Parameters
-    ----------
-    zeta     : evaluation point in ℍ.
-    U        : free-stream speed.
-    obstacle : solved UrbanObstacle.
-    """
     z0 = obstacle.zeta0
     a  = obstacle.radius
     a2 = a * a
@@ -192,10 +111,6 @@ def urban_terrain_potential(
     obstacle: UrbanObstacle,
     terrain_sources,
 ) -> complex:
-    """Combined urban obstacle + terrain correction potential.
-
-    W(ζ) = urban_potential(ζ) + Σₖ terrain source/sink terms
-    """
     from .terrain import terrain_potential
     W_terrain_full = terrain_potential(zeta, U, terrain_sources)
     W_uniform = U * zeta
@@ -210,10 +125,6 @@ def road_terrain_potential(
     terrain_sources,
     road_vortices,
 ) -> complex:
-    """Combined terrain + road-vortex potential (no urban obstacle).
-
-    W(ζ) = U·ζ  +  terrain sources  +  road vortices
-    """
     from .terrain import terrain_potential
     from .roads import road_potential
     W_terrain = terrain_potential(zeta, U, terrain_sources)
@@ -228,14 +139,6 @@ def full_potential(
     terrain_sources,
     road_vortices,
 ) -> complex:
-    """Full combined potential: urban obstacle + terrain + road vortices.
-
-    W(ζ) = U·ζ  +  Ua²/(ζ−ζ₀)  +  Ua²/(ζ−ζ̄₀)
-           +  Σ_j (Q_j/2π)·[log(ζ−s_j) + log(ζ−s̄_j)]   (terrain)
-           +  Σ_k (−iΓ_k/2π)·[log(ζ−s_k) + log(ζ−s̄_k)] (roads)
-
-    Each extra term preserves ψ = 0 on ℝ via the method of images.
-    """
     from .terrain import terrain_potential
     from .roads import road_potential
     W_urban = urban_potential(zeta, U, obstacle)
@@ -246,7 +149,6 @@ def full_potential(
 
 
 def _sample_boundary(poly: Polygon, n_pts: int) -> list[complex]:
-    """Return n_pts complex points evenly spaced along the polygon boundary."""
     coords = np.array(poly.exterior.coords)
     diffs = np.diff(coords, axis=0)
     seg_lengths = np.hypot(diffs[:, 0], diffs[:, 1])
@@ -267,14 +169,6 @@ def _sample_boundary(poly: Polygon, n_pts: int) -> list[complex]:
 def _minimum_enclosing_circle(
     points: np.ndarray,
 ) -> tuple[complex, float]:
-    """Compute the minimum enclosing circle (MEC) using Welzl's algorithm.
-
-    Welzl (1991) gives an expected O(n) randomised algorithm.
-    We convert the complex array to a plain list, shuffle once for
-    expected linear time, then recurse.  For the polygon sizes used
-    here (<200 vertices) the recursion depth is well within Python's
-    default limit.
-    """
     import random as _random
 
     pts = list(points)
@@ -289,7 +183,6 @@ def _minimum_enclosing_circle(
         return c, abs(p - c)
 
     def _c3(p: complex, q: complex, r: complex) -> tuple[complex, float]:
-        """Circumcircle of three points (circumcentre formula)."""
         ax, ay = p.real, p.imag
         bx, by = q.real, q.imag
         cx, cy = r.real, r.imag
