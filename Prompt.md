@@ -44,7 +44,7 @@ To obtain crossing streamlines, one must either:
 - Relabel the polygon so the infinite side spans the west and east boundaries, or
 - Switch to a source-sink potential:
 
-$W(\zeta) = W_0(\zeta) + \frac{a^2}{\zeta-\zeta_0}\cdot\overline{W_0'(\zeta_0+\frac{a^2}{\overline{\zeta}-\overline{\zeta}_0})}$
+$$W = U \log\frac{\zeta - \zeta_{\mathrm{src}}}{\zeta - \zeta_{\mathrm{sink}}}$$
 
 ---
 
