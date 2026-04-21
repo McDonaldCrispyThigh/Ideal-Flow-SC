@@ -35,7 +35,7 @@ Rather than evaluating a fresh SC integral at every iteration step, we approxima
 
 ## Uniform Flow Produces Closed Streamlines
 
-Uniform flow $W = U\zeta$ has streamlines $\operatorname{Im}(\zeta) = y_0$ (horizontal lines) in the upper half-plane. Both ends of each horizontal line, $\zeta \to \pm\infty$, are the **same point on the Riemann sphere**. The SC map sends that point to a single fixed vertex on the polygon boundary, so every streamline becomes a **closed curve** inside the Boulder domain — corresponding to circulatory flow.
+Uniform flow $W = U\zeta$ has streamlines $\mathrm{Im}(\zeta) = y_0$ (horizontal lines) in the upper half-plane. Both ends of each horizontal line, $\zeta \to \pm\infty$, are the **same point on the Riemann sphere**. The SC map sends that point to a single fixed vertex on the polygon boundary, so every streamline becomes a **closed curve** inside the Boulder domain — corresponding to circulatory flow.
 
 This is not a numerical error; it is a **topological consequence of mapping to a bounded polygon**.
 
