@@ -186,7 +186,7 @@ forward image of a vertical half-line $\text{Re}(\zeta) = x_0$ in $\mathbb{H}$.
 ![Combined flow uniform](figures/fig4_combined.png)
 
 Overlay of Figs 2 and 3 (blue streamlines, red equipotentials). The two families form
-the **conformal grid** — the image of a rectangular grid in $\mathbb{H}$ under $f$.
+the **conformal grid**, the image of a rectangular grid in $\mathbb{H}$ under $f$.
 Orthogonality throughout the interior confirms the map is conformal.
 
 ### Fig 5 - Terrain-Informed Flow
