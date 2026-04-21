@@ -70,6 +70,6 @@ To enforce $\psi = 0$ on the Boulder boundary, we use the **Method of Images**: 
 
 For urban built-up areas modeled as circular obstacles, we apply the **Milne-Thomson Circle Theorem**. Using the Laurent-series properties of the complex potential, we insert an analytically impenetrable circle directly at the formula level:
 
-$$W(\zeta) = W_0(\zeta) + \frac{a^2}{\zeta - \zeta_0} \cdot \overline{W_0'\!\left(\zeta_0 + \frac{a^2}{\bar{\zeta} - \bar{\zeta}_0}\right)}$$
+$W(\zeta) = W_0(\zeta) + \frac{a^2}{\zeta-\zeta_0}\cdot\overline{W_0'(\zeta_0+\frac{a^2}{\overline{\zeta}-\overline{\zeta}_0})}$
 
 No discrete grid correction is needed — the obstacle is "conjured" entirely within the analytic expression.
