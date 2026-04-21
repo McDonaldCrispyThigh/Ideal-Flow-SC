@@ -33,6 +33,18 @@ For a polygon with $n$ vertices and interior angles $\alpha_k\pi$, the SC map fr
 
 $$f(\zeta) = A + C \int_{\zeta_0}^{\zeta} \prod_{k} (t - \zeta_k)^{\alpha_k - 1} \, dt$$
 
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $f(\zeta)$ | SC map; outputs a point $z \in \Omega$ in the physical Boulder domain | km (physical coordinates) |
+| $\zeta = \xi + i\eta$ | complex coordinate in the upper half-plane $\mathbb{H}$ ($\eta > 0$); the mathematical input domain | dimensionless |
+| $A \in \mathbb{C}$ | translation constant; shifts the entire mapped polygon to the correct physical position | km |
+| $C \in \mathbb{C}$ | scaling-and-rotation constant; sets the size and orientation of the mapped polygon | km |
+| $t$ | integration variable along the path from $\zeta_0$ to $\zeta$ in $\mathbb{H}$ | dimensionless |
+| $\zeta_k \in \mathbb{R}$ | $k$-th pre-vertex; the real-axis point that maps to the $k$-th polygon corner | dimensionless |
+| $\alpha_k$ | interior angle of the $k$-th polygon corner, expressed as a fraction of $\pi$ (so the actual angle is $\alpha_k \pi$ radians); must satisfy $\sum_k (1 - \alpha_k) = 2$ | dimensionless |
+| $\alpha_k - 1$ | exponent in the integrand; controls how strongly the map bends near vertex $k$ | dimensionless |
+| $n$ | total number of polygon vertices (11 for the simplified Boulder boundary) | — |
+
 The **pre-vertices** $\zeta_k \in \mathbb{R}$ are unknowns. Möbius normalisation fixes three
 ($\zeta_0 = -1$, $\zeta_1 = 0$, $\zeta_{n-1} = 1$); the rest are found by Levenberg-Marquardt
 nonlinear least-squares matching edge-length ratios of the mapped polygon to the target.
@@ -40,6 +52,8 @@ nonlinear least-squares matching edge-length ratios of the mapped polygon to the
 Streamlines are computed via the **forward map**: horizontal lines $\text{Im}(\zeta) = y_0$
 in $\mathbb{H}$ are mapped forward as parametric curves $z(t) = f(t + iy_0)$, giving
 exact artifact-free streamlines with no inverse-solver required.
+
+---
 
 ### Terrain Correction
 
@@ -49,9 +63,21 @@ vertex $k$ contributes a source/sink pair in $\mathbb{H}$:
 $$W_\text{terrain}(\zeta) = U\zeta + \sum_k \frac{q_k}{2\pi}
   \Bigl[\log(\zeta - s_k) + \log(\zeta - \bar{s}_k)\Bigr]$$
 
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $W = \phi + i\psi$ | complex potential; real part $\phi$ is the velocity potential, imaginary part $\psi$ is the stream function (its level curves are the streamlines) | m²/s |
+| $U$ | free-stream wind speed; amplitude of the background uniform flow | m/s |
+| $q_k$ | source/sink strength at vertex $k$; positive = source (air rises, outflow), negative = sink (air descends, inflow); magnitude proportional to elevation gradient at that vertex | m²/s |
+| $s_k \in \mathbb{H}$ | pre-image of polygon vertex $k$ in the upper half-plane; obtained by numerically inverting the SC map | dimensionless |
+| $\bar{s}_k$ | complex conjugate of $s_k$; the mirror image below the real axis, required by the **Method of Images** to enforce $\psi = 0$ (no flow through the boundary) on the real axis | dimensionless |
+| $\log(\zeta - s_k)$ | complex logarithm; its imaginary part gives the angle swept from $s_k$ to $\zeta$, which is the stream function contribution of the source/sink | dimensionless |
+| $\log(\zeta - s_k) + \log(\zeta - \bar{s}_k)$ | the image pair; their imaginary parts cancel exactly on the real axis ($\text{Im}(\zeta) = 0$), enforcing the no-penetration boundary condition | dimensionless |
+
 The image term $\log(\zeta - \bar{s}_k)$ enforces $\psi = 0$ on $\mathbb{R}$ by the
 method of images, since $\text{Im}[\log(\zeta - s_k) + \log(\zeta - \bar{s}_k)] = 0$
 for real $\zeta$.
+
+---
 
 ### Urban Obstacle (Circle Theorem)
 
@@ -61,8 +87,19 @@ radius $a$). By the Milne-Thomson circle theorem:
 
 $$W_\text{urban}(\zeta) = U\zeta + \frac{Ua^2}{\zeta - \zeta_0} + \frac{Ua^2}{\bar\zeta - \bar\zeta_0}$$
 
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $U\zeta$ | background uniform flow (same as the baseline model) | m²/s |
+| $\zeta_0 \in \mathbb{H}$ | centre of the circular obstacle in the upper half-plane; its pre-image corresponds to the centroid of downtown Boulder | dimensionless |
+| $a$ | radius of the circular obstacle in the $\zeta$-plane; controls how large the no-flow zone is | dimensionless |
+| $\frac{Ua^2}{\zeta - \zeta_0}$ | dipole term introduced by the circle theorem; represents the flow that is "pushed around" the obstacle | m²/s |
+| $\frac{Ua^2}{\bar\zeta - \bar\zeta_0}$ | image of the dipole in the lower half-plane; enforces $\psi = 0$ on the real axis (Boulder boundary) | m²/s |
+| $\text{Im}(\zeta_0)/a$ | separation ratio; measures how far the obstacle centre is above the boundary relative to its own radius; our run achieves 5.36, giving ~3.5% error | dimensionless |
+
 Accuracy is $O\!\left((a/\text{Im}\,\zeta_0)^2\right)$; the run below achieves
 $\text{Im}(\zeta_0)/a = 5.36$, giving approximately 3.5% error.
+
+---
 
 ### Road-Vortex Model (OSM Intersections)
 
@@ -72,6 +109,14 @@ treated as a point vortex in $\mathbb{H}$:
 
 $$W_\text{road}(\zeta) = U\zeta + \sum_k \frac{-i\Gamma_k}{2\pi}
   \Bigl[\log(\zeta - s_k) + \log(\zeta - \bar{s}_k)\Bigr]$$
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $\Gamma_k$ | circulation strength of the $k$-th vortex; proportional to the degree (number of roads) of intersection $k$; positive = counter-clockwise (CCW), negative = clockwise (CW) | m²/s |
+| $-i\Gamma_k / (2\pi)$ | complex coefficient of a point vortex; the factor $-i$ rotates the logarithm's contribution by 90°, turning a source/sink pattern into a swirling vortex pattern | m²/s |
+| $s_k \in \mathbb{H}$ | pre-image of intersection $k$ in the upper half-plane; obtained by applying the SC inverse map to each OSM road node | dimensionless |
+| $\bar{s}_k$ | mirror image of $s_k$ below the real axis (Method of Images); ensures $\psi = 0$ on the Boulder boundary | dimensionless |
+| $\log(\zeta - s_k) + \log(\zeta - \bar{s}_k)$ | vortex-image pair; imaginary parts cancel on the real axis, enforcing no-penetration | dimensionless |
 
 The image term $\log(\zeta - \bar{s}_k)$ restores $\psi = 0$ on $\mathbb{R}$ (no-penetration
 on $\partial\Omega$). Intersection positions $s_k \in \mathbb{H}$ are obtained by applying the
@@ -141,7 +186,7 @@ forward image of a vertical half-line $\text{Re}(\zeta) = x_0$ in $\mathbb{H}$.
 ![Combined flow uniform](figures/fig4_combined.png)
 
 Overlay of Figs 2 and 3 (blue streamlines, red equipotentials). The two families form
-the **conformal grid** - the image of a rectangular grid in $\mathbb{H}$ under $f$.
+the **conformal grid** — the image of a rectangular grid in $\mathbb{H}$ under $f$.
 Orthogonality throughout the interior confirms the map is conformal.
 
 ### Fig 5 - Terrain-Informed Flow
