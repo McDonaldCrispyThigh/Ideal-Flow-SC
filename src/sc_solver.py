@@ -101,7 +101,7 @@ def _side_length(zk_a: float, zk_b: float,
 
 
 def _all_side_lengths(zk: np.ndarray, betas: np.ndarray,
-                      R: float = 500.0) -> np.ndarray:
+                      R: float = 5000.0) -> np.ndarray:
     """Compute side lengths for all n sides including the infinite one."""
     n = len(zk)
     lengths = np.empty(n)
@@ -120,7 +120,7 @@ def solve_parameters(
     z_poly: np.ndarray,
     alphas: np.ndarray,
     *,
-    maxiter: int = 600,
+    maxiter: int = 2000,
     tol: float = 1e-10,
 ) -> SCParameters:
     """Solve the SC parameter problem.
@@ -178,13 +178,33 @@ def solve_parameters(
         result = optimize.least_squares(
             _residuals, x0,
             method="lm",
-            max_nfev=maxiter * 30,
+            max_nfev=maxiter * 100,
             ftol=tol, xtol=tol, gtol=tol,
         )
-        if result.success:
+        logger.info("SC solver initial run: cost=%.2e", result.cost)
+
+        # Multi-start restart: if cost is poor, perturb and retry up to 5 times.
+        best_result = result
+        for restart in range(5):
+            if best_result.cost < 1e-4:
+                break
+            noise = np.random.randn(len(x0)) * 0.3
+            r2 = optimize.least_squares(
+                _residuals, best_result.x + noise,
+                method="lm",
+                max_nfev=maxiter * 50,
+                ftol=tol, xtol=tol, gtol=tol,
+            )
+            logger.info("SC solver restart %d: cost=%.2e", restart + 1, r2.cost)
+            if r2.cost < best_result.cost:
+                best_result = r2
+        result = best_result
+
+        if result.cost < 1e-4:
             logger.info("SC solver converged: cost=%.2e", result.cost)
         else:
-            logger.warning("SC solver: %s  (cost=%.2e)", result.message, result.cost)
+            logger.warning("SC solver: cost=%.2e after restarts (may not have converged)",
+                           result.cost)
 
         zk = np.empty(n)
         for idx, val in fixed_vals.items():
@@ -200,49 +220,90 @@ def solve_parameters(
 
     params = SCParameters(zk=zk, alphas=alphas, betas=betas,
                           A=A, C=C, z_poly=z_poly)
-    logger.info("A = %.6g%+.6gj   C = %.6g%+.6gj", A.real, A.imag, C.real, C.imag)
+
+    # ── Diagnostics ──────────────────────────────────────────────────────────
+    logger.info("=== SC solver diagnostics ===")
+    logger.info("pre-vertices zk = %s", np.round(zk, 6))
+    logger.info("A = %.6g%+.6gj   |C| = %.6g   arg(C) = %.4f rad",
+                A.real, A.imag, abs(C), np.angle(C))
+    # Side-vector check: C * real_integral(side k) should equal z_poly[k+1] - z_poly[k]
+    for k in range(n - 1):
+        I_side = integrate_real(zk[k], zk[k + 1], zk, betas)
+        computed = C * I_side
+        target   = z_poly[k + 1] - z_poly[k]
+        err      = abs(computed - target)
+        logger.info("  side %2d: |C*I - Δz| = %.4e  (|Δz|=%.4f, arg_ratio=%.3f°)",
+                    k, err, abs(target), np.degrees(np.angle(computed/target)))
+
     return params
 
 
 def _solve_AC(zk, betas, z_poly):
-    """Determine A = f(_ZETA_REF) and scale/rotation C via least squares.
+    """Determine C from real-axis side integrals, then A from a safe reference.
 
-    The SC map is parameterised as
-        f(ζ) = A + C ∫_{_ZETA_REF}^{ζ} integrand dt
+    Two-stage approach:
 
-    where _ZETA_REF = 0.5j lies safely in ℍ away from all branch points.
-    We compute the integrals I_k = ∫_{_ZETA_REF}^{zk[k] + ε} for all n
-    vertices (ε = 0.05j keeps paths away from branch points), then solve
-    the overdetermined linear system
-        A + C · I_k = z_poly[k]   for k = 0, …, n-1
-    in the real least-squares sense to get A and C that globally minimise
-    the vertex error rather than enforcing only two calibration points.
+    Stage 1 — C from real-axis side integrals (no branch-point issues):
+        C * ∫_{zk[k]}^{zk[k+1]} integrand dt  =  z_poly[k+1] − z_poly[k]
+    Solved by least-squares over all n−1 finite sides.  The integrand on the
+    real axis is evaluated with `_sc_prod_real` (accurate GL quadrature).
+
+    Stage 2 — A from a safe real-axis midpoint:
+        Pick mid = midpoint of the widest finite pre-vertex interval (well
+        separated from all branch points).  Compute f(mid) by accumulating
+        from the nearest polygon vertex along the real axis, then compute
+        A = f(mid+i·h) − C · ∫_{_ZETA_REF}^{mid+i·h} integrand dt
+    where h = 0.3 keeps the complex path far from the real-axis singularities.
+    The vertical ascent from mid to mid+i·h is safe because mid is not a
+    branch point.
     """
-    eps = 0.05j   # safe approach height above each pre-vertex
+    n = len(z_poly)
 
-    def _path_integral(zeta_target):
-        """∫_{_ZETA_REF}^{zeta_target} via an L-shaped path in ℍ."""
-        mid_y = max(abs(zeta_target.imag), 0.3)
-        p1 = _ZETA_REF.real + 1j * mid_y
-        p2 = zeta_target.real + 1j * mid_y
-        I = 0.0 + 0.0j
-        if abs(_ZETA_REF - p1) > 1e-14:
-            I += integrate_complex(_ZETA_REF, p1, zk, betas)
-        if abs(p1 - p2) > 1e-14:
-            I += integrate_complex(p1, p2, zk, betas)
-        if abs(p2 - zeta_target) > 1e-14:
-            I += integrate_complex(p2, zeta_target, zk, betas)
-        return I
+    # ── Stage 1: C from real-axis side integrals ─────────────────────────
+    sides_z = np.diff(np.append(z_poly, z_poly[0]))      # z_poly[k+1]−z_poly[k], shape (n,)
+    sides_I = np.array(
+        [integrate_real(zk[k], zk[k + 1], zk, betas) for k in range(n - 1)],
+        dtype=complex,
+    )
 
-    # Use only the two extremal fixed pre-vertices (zk[0] and zk[-1]).
-    # Their integrals are computed far from the crowded region near zk[1]=0,
-    # so GL quadrature is most accurate there.
-    I_first = _path_integral(zk[0]  + eps)
-    I_last  = _path_integral(zk[-1] + eps)
+    # C * I_k = s_k  →  2-real-equation system per side, solve with lstsq
+    M_C = np.zeros((2 * (n - 1), 2))
+    rhs_C = np.zeros(2 * (n - 1))
+    for k in range(n - 1):
+        Ik, sk = sides_I[k], sides_z[k]
+        M_C[2 * k,     :] = [ Ik.real, -Ik.imag]
+        M_C[2 * k + 1, :] = [ Ik.imag,  Ik.real]
+        rhs_C[2 * k]     = sk.real
+        rhs_C[2 * k + 1] = sk.imag
+    xC, _, _, _ = np.linalg.lstsq(M_C, rhs_C, rcond=None)
+    C = xC[0] + 1j * xC[1]
 
-    dI = I_last - I_first
-    C = (z_poly[-1] - z_poly[0]) / dI if abs(dI) > 1e-15 else 1.0 + 0.0j
-    A = z_poly[0] - C * I_first
+    # ── Stage 2: A from safe real-axis midpoint ───────────────────────────
+    # Index of the widest finite interval (best numerical conditioning).
+    gaps = np.diff(zk)                       # zk is sorted, shape (n,)
+    k_safe = int(np.argmax(gaps[:-1]))       # exclude the infinite last gap
+    mid_real = 0.5 * (zk[k_safe] + zk[k_safe + 1])
+
+    # f(mid_real) via real-axis accumulation from vertex k_safe.
+    f_mid_real = z_poly[k_safe] + C * integrate_real(zk[k_safe], mid_real, zk, betas)
+
+    # Connect mid_real to mid_real+i·h via vertical ascent (safe, not a branch point).
+    h = 0.3
+    mid_above = mid_real + 1j * h
+    I_ascent = integrate_complex(mid_real + 1e-9j, mid_above, zk, betas)
+    f_mid_above = f_mid_real + C * I_ascent
+
+    # A = f(mid_above) − C · ∫_{_ZETA_REF}^{mid_above} integrand dt
+    # L-shaped complex path from _ZETA_REF = 0.5j to mid_above = mid_real + 0.3j.
+    p1 = _ZETA_REF.real + 1j * h          # 0 + 0.3j  (same height as mid_above)
+    p2 = mid_real        + 1j * h          # mid_real + 0.3j  (= mid_above)
+    I_ref_to_mid = 0.0 + 0.0j
+    if abs(_ZETA_REF - p1) > 1e-14:
+        I_ref_to_mid += integrate_complex(_ZETA_REF, p1, zk, betas)
+    if abs(p1 - p2) > 1e-14:
+        I_ref_to_mid += integrate_complex(p1, p2, zk, betas)
+
+    A = f_mid_above - C * I_ref_to_mid
     return A, C
 
 
