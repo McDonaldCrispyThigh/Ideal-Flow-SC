@@ -44,7 +44,13 @@ Given an unconstrained vector $p = (p_1, \ldots, p_8) \in \mathbb{R}^8$, we comp
 
 $$z_k = \sum_{j=1}^{k} \frac{e^{p_j}}{\displaystyle\sum_{i} e^{p_i} + 1}$$
 
-(softmax weights followed by a cumulative sum).
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $p_j$ | $j$-th raw optimization parameter, unconstrained | dimensionless |
+| $z_k$ | $k$-th free pre-vertex position on the real axis | dimensionless (normalized to $(0,1)$) |
+| $\sum_i e^{p_i} + 1$ | normalization denominator (the $+1$ ensures all $z_k$ sum to less than 1) | dimensionless |
 
 **Why does this work?**
 
@@ -92,7 +98,15 @@ Because the quadrature nodes are fixed at the start, this turns each integral ev
 
 $$W(\zeta) = U \zeta$$
 
-The streamlines of this flow are horizontal lines $\mathrm{Im}(\zeta) = y_0 = \text{const}$.
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $W = \phi + i\psi$ | complex potential; real part $\phi$ is the velocity potential, imaginary part $\psi$ is the stream function | m²/s |
+| $\zeta = \xi + i\eta$ | complex coordinate in the mathematical upper half-plane $\mathbb{H}$ ($\eta > 0$); this is the "before-mapping" domain | dimensionless |
+| $U$ | free-stream wind speed (the uniform flow amplitude) | m/s |
+
+The streamlines of this flow are the curves where $\psi = \mathrm{Im}(W) = U\,\mathrm{Im}(\zeta) = U\eta = \text{const}$, i.e., horizontal lines $\eta = y_0$.
 
 **The topological catch:** Each horizontal line in $\mathbb{H}$ extends from $\zeta \to -\infty$ to $\zeta \to +\infty$. On the Riemann sphere, both ends of this line are the **same point** (the "north pole," or point at infinity). The SC map sends that single point to one fixed vertex on the Boulder polygon.
 
@@ -108,7 +122,16 @@ Therefore every horizontal line — which is topologically a circle — maps to 
 
 $$W(\zeta) = U \log\frac{\zeta - \zeta_{\mathrm{src}}}{\zeta - \zeta_{\mathrm{sink}}}$$
 
-Place the source $\zeta_\mathrm{src}$ upstream and the sink $\zeta_\mathrm{sink}$ downstream. Streamlines now run from source to sink and cross the entire domain.
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $\zeta_{\mathrm{src}}$ | location of the **source** in $\mathbb{H}$ — the point where flow originates (enters the domain) | dimensionless |
+| $\zeta_{\mathrm{sink}}$ | location of the **sink** in $\mathbb{H}$ — the point where flow terminates (leaves the domain) | dimensionless |
+| $U$ | source/sink strength, controls total volumetric flow rate | m²/s |
+| $\log(\cdot)$ | complex natural logarithm; its imaginary part gives the stream function $\psi$, which counts the angle swept from source to sink | dimensionless inside log |
+
+Streamlines run from $\zeta_{\mathrm{src}}$ to $\zeta_{\mathrm{sink}}$ and cross the entire domain — exactly the wind-passing-through-the-city behavior we want.
 
 ---
 
@@ -122,6 +145,14 @@ Place the source $\zeta_\mathrm{src}$ upstream and the sink $\zeta_\mathrm{sink}
 2. Push each $\zeta$-grid point **forward** through the SC map: compute $z = f(\zeta)$. This is cheap — just evaluate one SC integral per point.
 3. We now have a cloud of scattered $(z, W)$ pairs in the physical domain.
 4. Use **scattered-point interpolation** (`scipy.interpolate.griddata`) to recover $W$ on a regular pixel grid over Boulder.
+
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $\zeta \in \mathbb{H}$ | grid point in the mathematical upper half-plane (before mapping) | dimensionless |
+| $z = f(\zeta) \in \mathbb{C}$ | image of $\zeta$ under the SC map; a point inside the Boulder polygon | km (physical coordinates) |
+| $W(\zeta)$ | complex potential evaluated at $\zeta$ (upstream, in the simple domain) | m²/s |
 
 **Why does this matter?**
 
@@ -147,6 +178,14 @@ The forward map naturally respects the conformal boundary: grid points from $\ma
 
 **Method of Images:** For every singularity (vortex, source, sink) placed at a point $\zeta_0$ in the upper half-plane, we place a mirror-image singularity of opposite sign at $\bar{\zeta}_0$ in the lower half-plane. The imaginary parts of the two contributions cancel exactly on the real axis by symmetry — so $\psi = 0$ on $\mathrm{Im}(\zeta) = 0$ is automatic.
 
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $\psi = \mathrm{Im}(W)$ | stream function; its level curves are the streamlines; $\psi = 0$ on a wall means no flow crosses that wall | m²/s |
+| $\zeta_0 \in \mathbb{H}$ | location of the physical singularity (above the real axis) | dimensionless |
+| $\bar{\zeta}_0$ | complex conjugate of $\zeta_0$; the mirror image below the real axis | dimensionless |
+
 Because the SC map is conformal, $\psi = 0$ on the real axis in $\mathbb{H}$ pulls back to $\psi = 0$ on the Boulder boundary in the physical domain. No numerical boundary enforcement is needed at all.
 
 ---
@@ -160,6 +199,18 @@ Because the SC map is conformal, $\psi = 0$ on the real axis in $\mathbb{H}$ pul
 $$W(\zeta) = W_0(\zeta) + \overline{W_0\!\left(\zeta_0 + \frac{a^2}{\bar{\zeta} - \bar{\zeta}_0}\right)}$$
 
 produces flow that is identical to $W_0$ far from the circle, but has the circle $|\zeta - \zeta_0| = a$ as an impenetrable streamline ($\psi = \mathrm{const}$ on the boundary).
+
+**Variables:**
+
+| Symbol | Meaning | Units |
+|--------|---------|-------|
+| $W_0(\zeta)$ | original complex potential **without** the obstacle (e.g., uniform flow or source-sink) | m²/s |
+| $W(\zeta)$ | modified complex potential **with** the circular obstacle inserted | m²/s |
+| $\zeta_0$ | center of the circular obstacle in the $\zeta$-plane | dimensionless |
+| $a$ | radius of the circular obstacle in the $\zeta$-plane | dimensionless (same scale as $\zeta$) |
+| $\bar{\zeta}$ | complex conjugate of $\zeta$; flips the imaginary part sign | dimensionless |
+| $\zeta_0 + \dfrac{a^2}{\bar{\zeta} - \bar{\zeta}_0}$ | **inversion** of $\zeta$ through the circle: maps every exterior point to a corresponding interior point; this is the "reflection" that enforces the no-penetration condition | dimensionless |
+| $\overline{(\cdots)}$ | complex conjugate of the entire expression inside; together with the inversion, this ensures $\psi$ is constant on $|\zeta - \zeta_0| = a$ | — |
 
 **Intuition:** The second term is constructed from the "image" of $W_0$ reflected through the circle (via the inversion $\zeta \mapsto \zeta_0 + a^2/(\bar{\zeta} - \bar{\zeta}_0)$). This reflection is the circle-geometry analogue of the Method of Images for a flat wall.
 
