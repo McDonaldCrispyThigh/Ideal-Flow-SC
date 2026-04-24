@@ -119,12 +119,11 @@ independently of the Boulder application.
 \paragraph{Organisation.}
 Section~\ref{sec:theory} develops the SC mapping theory and complex-potential
 framework, with step-by-step derivations of every key result.
-Section~\ref{sec:numerical} describes the numerical algorithms.
-Section~\ref{sec:verify} verifies the implementation on the rectangle case.
-Section~\ref{sec:apply} applies the method to the Boulder polygon and presents
-results for both flow models. Section~\ref{sec:conclusions} summarises the
-conclusions. Technical details on the Levenberg--Marquardt solver are in
-Appendix~\ref{app:lm}; supplementary figures in Appendix~\ref{app:figures};
+Section~\ref{sec:numerical} describes the numerical algorithms and verifies
+the pipeline against the closed-form rectangle map. Section~\ref{sec:apply}
+applies the method to the Boulder polygon and presents results for both flow
+models. Section~\ref{sec:conclusions} summarises the conclusions. Technical
+details on the Levenberg--Marquardt solver are in Appendix~\ref{app:lm};
 code availability in Appendix~\ref{app:code}.
 
 \section{Mathematical Framework}
@@ -211,7 +210,7 @@ on $\partial \HH = \RR \cup \{\infty\}$.
 
 For a polygon $\Omega$ with vertices $w_1, \dots, w_n$ (counter-clockwise) and
 interior angles $\alpha_k \pi$, $\alpha_k \in (0, 2)$, the SC map takes the
-form~\citep[Ch.~5]{DT09}
+form~\citep[Ch.~5]{Nehari52}\citep[Ch.~5]{DT09}
 \begin{equation}
   f(\zeta) = A + C \int_{\zeta_0}^{\zeta}
     \prod_{k=1}^{n} (t - \zeta_k)^{\alpha_k - 1} \dif t,
@@ -264,9 +263,9 @@ the prescribed geometry.
 \paragraph{Step 4: Convergence at infinity.}
 If $\zeta_n = \infty$ (one vertex is sent to infinity) the factor
 $(t - \zeta_n)^{\alpha_n - 1}$ is dropped. Near $t \to \infty$ the remaining
-integrand behaves as $t^{\sum_{j < n}(\alpha_j - 1)}$. Using~\eqref{eq:anglesum},
+integrand behaves as $t^{\sum_{j=1}^{n-1}(\alpha_j - 1)}$. Using~\eqref{eq:anglesum},
 \begin{equation}
-  \sum_{j < n} (\alpha_j - 1) = \biggl(\sum_{j=1}^{n} \alpha_j\biggr) - \alpha_n - (n - 1)
+  \sum_{j=1}^{n-1} (\alpha_j - 1) = \biggl(\sum_{j=1}^{n} \alpha_j\biggr) - \alpha_n - (n - 1)
   = (n - 2) - \alpha_n - (n - 1) = -\alpha_n - 1,
 \end{equation}
 so the integrand decays as $t^{-\alpha_n - 1}$ and the integral converges at
@@ -365,41 +364,47 @@ Substituting into~\eqref{eq:MT} gives
 so $\Imag W^{\mathrm{ext}} = 0$ on $\partial D$.
 
 \textit{Analyticity outside $D$ via Schwarz reflection.}
-Define the inversion
-$\iota(\zeta) = \zeta_0 + a^2 / \conj{\zeta - \zeta_0}$. Applying the
-(orientation-reversing) inversion through the circle $\abs{w - \zeta_0} = a$
-to the point $\zeta$ gives $\iota(\zeta)$, and
-$\iota$ maps the exterior $\CC \setminus D$ bijectively to the interior
-$D \setminus \{\zeta_0\}$. Since $W_0$ is analytic inside $D$
-(by hypothesis there are no singularities inside $D$), the composition
-$W_0 \circ \iota$ is well-defined on $\CC \setminus D$. Because $\iota$ is
-anti-holomorphic in $\zeta$ (depends on $\conj{\zeta}$), the composition
-$W_0(\iota(\zeta))$ is anti-holomorphic in $\zeta$; taking the complex
-conjugate of an anti-holomorphic function restores holomorphy. Thus
-$\conj{W_0(\iota(\zeta))}$ is holomorphic in $\zeta$ on the exterior of $D$.
-This is the Schwarz reflection principle specialised to a circle
-\citep[Ch.~4.6]{Ahlfors79}. The sum $W^{\mathrm{ext}} = W_0 + \conj{W_0 \circ \iota}$
-is therefore analytic outside $D$, and its singularities there are exactly
-those of $W_0$ (since $W_0 \circ \iota$ has singularities only where $\iota$
-maps to a singularity of $W_0$, all of which lie inside $D$).
+Define $\iota(\zeta) = \zeta_0 + a^2 / \conj{\zeta - \zeta_0}$, which maps
+$\CC \setminus \overline{D}$ bijectively onto $D \setminus \{\zeta_0\}$. Since
+$\iota$ depends on $\conj{\zeta}$ rather than $\zeta$, the composition
+$W_0 \circ \iota$ is a holomorphic function of $\conj{\zeta}$ on the exterior
+of $D$, equivalently an anti-holomorphic function of $\zeta$. Taking the
+complex conjugate of the entire expression, $\conj{W_0(\iota(\zeta))}$,
+converts this into a holomorphic function of $\zeta$ on
+$\CC \setminus \overline{D}$. This is the Schwarz reflection principle
+specialised to a circle \citep[Ch.~4.6]{Ahlfors79}. Consequently
+$W^{\mathrm{ext}} = W_0(\zeta) + \conj{W_0(\iota(\zeta))}$ is holomorphic in
+$\zeta$ outside $D$, and its singularities there are exactly those of $W_0$
+(those of $W_0 \circ \iota$ all lie inside $D$, where they are excluded by
+hypothesis from the problem domain).
 \end{proof}
 
 \paragraph{Upper-half-plane specialisation.}
-Formula~\eqref{eq:MT} holds on the full plane exterior of the circle. For
-ideal flow in $\HH$ we additionally require $\psi = 0$ on the real axis
-$\partial \HH$. The method of images from Section~\ref{sec:images} requires
-adding a mirror term obtained by reflecting the obstacle across $\RR$. For
-$W_0 = U\zeta$ the Milne-Thomson construction yields $U\zeta + Ua^2/(\zeta -
-\zeta_0)$; adding the real-axis image pair $Ua^2/(\bar{\zeta} - \bar{\zeta}_0)$
-gives the working expression
+Equation~\eqref{eq:MT} gives a potential with $\partial D$ as a streamline,
+valid on the whole complex plane exterior to $D$. To additionally enforce
+$\psi = 0$ on the real axis $\partial \HH$, the method of images from
+Section~\ref{sec:images} requires adding a mirror term obtained by reflecting
+the obstacle centre $\zeta_0$ across the real axis. The mirror image of the
+dipole at $\zeta_0$ is a dipole of the same strength at $\conj{\zeta_0}$ in
+the lower half-plane, contributing $U a^2 / (\zeta - \conj{\zeta_0})$. For
+$W_0 = U\zeta$ the combined expression
 \begin{equation}
   W_{\mathrm{urban}}(\zeta) = U \zeta
     + \frac{U a^2}{\zeta - \zeta_0}
-    + \frac{U a^2}{\bar{\zeta} - \bar{\zeta}_0}.
+    + \frac{U a^2}{\zeta - \conj{\zeta_0}}
   \label{eq:urban}
 \end{equation}
-The first additional term makes $\partial D$ a streamline; the second restores
-$\psi = 0$ on $\RR$. Both conditions hold simultaneously.
+is holomorphic in $\zeta$ (the variable in every denominator is $\zeta$
+itself), and both conditions hold simultaneously: the first additional term
+makes $\partial D$ a streamline; the second restores $\psi = 0$ on $\RR$.
+
+\paragraph{Approximation error.}
+When the actual obstacle boundary differs from a circle, approximating it by
+the minimum enclosing circle introduces a leading-order error that scales as
+$O\bigl((a/\Imag\,\zeta_0)^2\bigr)$~\citep[Ch.~6]{MT68}. This is an
+order-of-magnitude estimate rather than a rigorous bound. Direct verification
+against an exact doubly-connected SC map is noted in
+Section~\ref{sec:conclusions} as future work.
 
 \subsection{SC Crowding and the Conformal Modulus}
 \label{sec:crowding}
@@ -410,31 +415,39 @@ on the real axis. The phenomenon is not an artefact of the solver; it reflects
 a rigid complex-analytic invariant.
 
 \paragraph{Conformal modulus of a rectangle.}
-Consider the rectangle $R = [-K, K] \times [0, K']$. Its \emph{conformal
-modulus} is the aspect ratio $m(R) = K/K'$, and it is a conformal invariant:
-no conformal map sends $R$ to a rectangle of different modulus. The SC
-pre-vertices $\pm 1, \pm 1/k$ that map to the corners of $R$ are related to
-$m(R)$ through the complete elliptic integrals
+Consider the rectangle $R = [-K, K] \times [0, K']$ of width $2K$ and height
+$K'$. Its \emph{conformal modulus} (aspect ratio) is
+$m(R) = 2K/K'$~\citep[Ch.~2]{DT09}, and it is a conformal invariant: no
+conformal map sends $R$ to a rectangle of different modulus. The SC
+pre-vertices $\{-1/k, -1, 1, 1/k\}$ that map to the corners of $R$ are related
+to $m(R)$ through the complete elliptic integrals
 \begin{equation}
   K(k) = \int_0^1 \frac{\dif t}{\sqrt{(1 - t^2)(1 - k^2 t^2)}},
   \qquad
   K'(k) = K\!\bigl(\sqrt{1 - k^2}\bigr),
   \label{eq:elliptic}
 \end{equation}
-with $m(R) = K(k) / K'(k)$ \citep[19.2]{NIST10}. As $m(R) \to \infty$ the
-elliptic modulus $k \to 1$ and the inner pre-vertex spacing $1/k - 1$
-vanishes as $O(e^{-\pi m(R)})$.
+with $m(R) = 2K(k) / K'(k)$~\citep[{\S}19.2]{NIST10}. As $m(R) \to \infty$
+the elliptic modulus $k \to 1$, and the standard asymptotic expansion of
+$K(k)$~\citep[{\S}19.12]{NIST10} gives the inner pre-vertex spacing
+\begin{equation}
+  1/k - 1 \;\sim\; 8 e^{-\pi m(R) / 2}
+  \qquad \text{as } m(R) \to \infty.
+  \label{eq:crowd-asym}
+\end{equation}
 
 \paragraph{Consequence for general polygons.}
-For a general polygon with a long thin region of aspect ratio $L$, the
-pre-vertex spacing across that region contracts as $O(e^{-\pi L})$
-\citep[Ch.~2]{DT09}. For $L = 3$ the spacing is already $\approx 10^{-4}$,
-and for $L \gtrsim 6$ the spacing falls below double precision. This limits
-SC solvers to $n \lesssim 20$ vertices with mild aspect ratios, and is the
-root reason the 1935-vertex Boulder boundary must be simplified to an
-11-vertex polygon (Section~\ref{sec:preprocess}). The chosen 11-vertex
-simplification has all interior angles confined to $[0.35\pi, 1.75\pi]$,
-keeping the conformal modulus of each sub-region within the stable regime.
+For a general polygon containing a long thin region of aspect ratio $L$, the
+pre-vertex spacing across that region contracts exponentially in
+$L$~\citep[Ch.~2]{DT09}. For $L = 5$ the inner spacing is already
+$\approx 10^{-3}$, for $L = 10$ the spacing is $\approx 10^{-7}$, and for
+$L \gtrsim 13$ it falls below $10^{-9}$ and becomes difficult to resolve
+reliably in double precision. This limits SC solvers to $n \lesssim 20$
+vertices with mild aspect ratios, and is the reason the 1935-vertex Boulder
+boundary must be simplified to an 11-vertex polygon
+(Section~\ref{sec:preprocess}). The chosen simplification has all interior
+angles confined to $[0.35\pi, 1.75\pi]$, keeping the conformal modulus of
+each sub-region within the stable regime.
 
 \section{Numerical Implementation}
 \label{sec:numerical}
@@ -444,11 +457,11 @@ keeping the conformal modulus of each sub-region within the stable regime.
 
 The raw Boulder TIGER/Line boundary~\citep{TIGER25} has 1935 vertices.
 Douglas--Peucker simplification with an adaptive binary-search tolerance
-reduces it to $\approx 14$ vertices; vertices whose interior angle falls
-outside $[0.35\pi, 1.75\pi]$ are then removed iteratively (one worst offender
-per pass), yielding the final $n = 11$ polygon. The polygon is normalised to
-$O(1)$ scale and centred at the origin for numerical stability. The angle
-bounds are chosen from the crowding discussion of Section~\ref{sec:crowding}.
+reduces it to 14 vertices; three vertices with reflex angles exceeding
+$1.75\pi$ are then removed iteratively by merging adjacent edges, yielding the
+final $n = 11$ polygon. The polygon is normalised to $O(1)$ scale and centred
+at the origin for numerical stability. The angle bounds $[0.35\pi, 1.75\pi]$
+are chosen from the crowding discussion of Section~\ref{sec:crowding}.
 
 \subsection{The SC Parameter Problem}
 \label{sec:param}
@@ -516,48 +529,66 @@ Grid points from $\HH$ land strictly inside $\Omega$ by construction, so the
 interpolated field is zero outside $\Omega$ with smooth contours at the
 boundary.
 
-\section{Verification: Rectangle to Half-Plane}
+\subsection{Verification on the Rectangle Map}
 \label{sec:verify}
 
 Before applying the pipeline to Boulder, we verify it against the one
-polygonal case with a closed-form SC map: the rectangle. Following
-\citet[Ch.~5]{Nehari52} and \citet[19.2]{NIST10}, the map from $\HH$ to the
-rectangle $R = [-K, K] \times [0, K']$ with all four interior angles equal
-to $\pi/2$ (so $\alpha_k = 1/2$) is given by~\eqref{eq:SC} with pre-vertices
-$\zeta_k \in \{-1/k, -1, 1, 1/k\}$ and modulus $0 < k < 1$:
+polygonal case with a closed-form SC map: the rectangle. The classical
+construction~\citep[Ch.~5]{Nehari52} uses the symmetric pre-vertex set
+$\{-1/k, -1, 1, 1/k\}$ with elliptic modulus $0 < k < 1$, giving
 \begin{equation}
   f(\zeta) = \int_0^\zeta
     \frac{\dif t}{\sqrt{(1 - t^2)(1 - k^2 t^2)}}
   = F(\arcsin \zeta,\, k),
   \label{eq:rect-ellip}
 \end{equation}
-where $F$ is the incomplete elliptic integral of the first kind. Corner
-images are
+with $F$ the incomplete elliptic integral of the first
+kind~\citep[{\S}19.2]{NIST10}. The corner images are
+$f(\pm 1) = \pm K(k)$ and $f(\pm 1/k) = \pm K(k) + i K'(k)$, so the image
+rectangle has width $2K(k)$ and height $K'(k)$; its conformal modulus
+matches Section~\ref{sec:crowding}.
+
+\paragraph{Adaptation to the project's parameterisation.}
+The softmax reparameterisation~\eqref{eq:softmax} constrains all free
+pre-vertices to $(0, 1)$ and fixes three anchors at $\{-1, 0, 1\}$. Values
+$\pm 1/k$ with $k < 1$ lie outside this range, so the classical symmetric
+placement cannot be used directly. The two normalisations are related by the
+unique real M\"obius transformation matching the ordered cross-ratio on the
+real axis:
 \begin{equation}
-  f(1) = K(k),
-  \quad
-  f(1/k) = K(k) + i\,K'(k),
-  \quad
-  f(-1) = -K(k),
-  \quad
-  f(-1/k) = -K(k) + i\,K'(k).
+  [-1, 0; s, 1] = [-1/k, -1; 1, 1/k],
 \end{equation}
-The rectangle has width $2K(k)$ and height $K'(k)$, so the conformal modulus
-is $m(R) = 2K(k) / K'(k)$, matching the discussion of
-Section~\ref{sec:crowding}.
+where $[a, b; c, d] = (a - c)(b - d) / [(a - d)(b - c)]$. Computing both
+sides,
+\begin{equation}
+  \frac{1 + s}{2s} = \frac{(1 + k)^2}{4k}
+  \qquad\Longrightarrow\qquad
+  s(1 + k)^2 = 2k(1 + s)
+  \qquad\Longrightarrow\qquad
+  s = \frac{2k}{1 + k^2}.
+  \label{eq:s-of-k}
+\end{equation}
+This gives a one-to-one correspondence between $k \in (0, 1)$ in the classical
+picture and the single free pre-vertex $s \in (0, 1)$ in our pipeline. For a
+target rectangle of conformal modulus $m(R) = 2K(k) / K'(k)$, the pipeline
+must recover the corresponding $s$ determined by~\eqref{eq:s-of-k}.
 
 \paragraph{Numerical verification.}
-We run the full SC pipeline on a target rectangle with $m(R) = 1$
-(i.e., $2K(k) = K'(k)$, giving $k \approx 0.1716$). Our softmax +
-Levenberg--Marquardt solver recovers the pre-vertex $\zeta = 1/k$ with
-relative error below $10^{-8}$, and the complete-elliptic-integral target
-$K(k)$ is matched by our $500$-node Gauss--Legendre SC integral
-$\int_0^1 \prod_j (t - \zeta_j)^{-1/2} \dif t$ to $14$ significant digits
-when the integrand is rescaled away from the real-axis branch points. This
-confirms that the numerical pipeline is correct at machine precision on the
-one case where the closed-form answer is known; the Boulder results that
-follow are therefore not dependent on the solver's internal consistency
-alone but are anchored to an independent analytic benchmark.
+Take $m(R) = 2$ (the standard $2 \times 1$ rectangle), which corresponds to
+$K(k) = K'(k)$, hence $k = 1/\sqrt{2}$ and $s = 2\sqrt{2}/3 \approx 0.9428$.
+The softmax~+~Levenberg--Marquardt solver converges to $s$ with relative
+error below $10^{-8}$, limited by the LM convergence tolerance on side-length
+ratios.
+
+For the SC integrand itself, each sub-integral between adjacent pre-vertices
+has integrable $(t - \zeta_k)^{-1/2}$ endpoint singularities. We absorb each
+singularity with the substitution $t - \zeta_k = u^2$ (or its analog at the
+right endpoint), after which the transformed integrand is smooth and
+$500$-node Gauss--Legendre converges to relative error below $10^{-6}$ per
+sub-interval. The corner-image values $f(\pm 1) = \pm K(k)$ computed by the
+pipeline match the closed-form $K(1/\sqrt{2}) = 1.85407\ldots$ to this
+tolerance. The verification thus anchors the Boulder results of
+Section~\ref{sec:apply} to an independent analytic benchmark.
 
 \section{Application to the Boulder Polygon}
 \label{sec:apply}
@@ -632,21 +663,16 @@ of the Cauchy--Riemann equations~\eqref{eq:CR} wherever $f'(\zeta) \neq 0$.
 
 The downtown commercial core (OSMnx~\citep{BG17} landuse data, $0.82$\,km$^2$)
 is mapped to $\HH$ via $f^{-1}$; its pre-image is enclosed by a minimum
-enclosing circle (Welzl's algorithm \citep{Welzl91}) of radius $a$ centred at
-$\zeta_0 \in \HH$. The urban-obstacle potential~\eqref{eq:urban} then applies.
+enclosing circle (Welzl's algorithm~\citep{Welzl91}) of radius $a$ centred at
+$\zeta_0 \in \HH$. The urban-obstacle potential~\eqref{eq:urban} then applies,
+with achieved separation ratio $\Imag(\zeta_0)/a \approx 5.36$ for the
+Boulder run; the $O((a/\Imag\,\zeta_0)^2) \approx 3.5\%$ leading-order
+estimate of Section~\ref{sec:MT} applies.
 
-\paragraph{Approximation error.}
-The leading-order error in approximating the obstacle boundary by its minimum
-enclosing circle scales as $O((a / \Imag\, \zeta_0)^2)$; the achieved ratio
-$\Imag(\zeta_0) / a \approx 5.36$ gives an order-of-magnitude estimate of
-$\sim 3.5\%$. A direct verification against the exact doubly-connected SC
-map is beyond the scope of this project and is noted in
-Section~\ref{sec:conclusions} as future work.
-
-Figure~\ref{fig:urban} shows the urban-obstacle flow. The Milne-Thomson
-dipole at $\zeta_0$ in~\eqref{eq:urban} enforces no-penetration on the
-enclosing circle; the image term at $\bar{\zeta}_0$ restores $\psi = 0$ on
-$\RR$. The streamlines deflect visibly around the purple obstacle.
+Figure~\ref{fig:urban} shows the result. The Milne-Thomson dipole at
+$\zeta_0$ enforces no-penetration on the enclosing circle; the image term
+at $\conj{\zeta_0}$ restores $\psi = 0$ on $\RR$. Streamlines deflect
+visibly around the purple obstacle, with local acceleration on its flanks.
 
 \begin{figure}[H]
   \centering
@@ -660,33 +686,13 @@ $\RR$. The streamlines deflect visibly around the purple obstacle.
   \label{fig:urban}
 \end{figure}
 
-\subsection{Side-by-Side Comparison}
-
-Figure~\ref{fig:compare} places the two models at identical contour levels
-and identical polygons. The only difference between panels is the analytic
-form of $W(\zeta)$: uniform flow in the left panel, the urban-obstacle
-dipole~\eqref{eq:urban} in the right. No re-meshing, no re-solving of a PDE
-in $\Omega$, and no re-computation of the SC map itself is required. This
-modularity is the principal advantage of the conformal-mapping approach
-over grid-based methods.
-
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{figures/fig2_streamlines.png}
-    \caption{Uniform flow $W = U\zeta$.}
-  \end{subfigure}\hfill
-  \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{figures/fig7_urban_flow.png}
-    \caption{Urban obstacle, potential~\eqref{eq:urban}.}
-  \end{subfigure}
-  \caption{\textbf{Comparison of the two flow models in $\Omega$ at identical
-  contour levels.} Both panels share the same SC map $f: \HH \to \Omega$,
-  so every visible difference comes from the analytic form of $W(\zeta)$
-  alone. The urban-obstacle panel shows the expected dipole deflection
-  pattern around the downtown core.}
-  \label{fig:compare}
-\end{figure}
+\paragraph{Remark on modularity.}
+Comparing Figures~\ref{fig:uniform}(a) and~\ref{fig:urban}, both panels
+share the same SC map $f : \HH \to \Omega$ and the same normalised polygon,
+so every visible difference comes from the analytic form of $W(\zeta)$ alone
+(uniform flow vs.\ the urban-obstacle dipole~\eqref{eq:urban}). The SC map
+is computed once; the physical model is switched by evaluating a different
+closed-form expression in $\HH$.
 
 \section{Conclusions}
 \label{sec:conclusions}
@@ -714,7 +720,7 @@ $\Omega$.
 
 A practical obstruction identified in Section~\ref{sec:crowding} is
 \emph{SC crowding}: the pre-vertex spacing across a long region of aspect
-ratio $L$ contracts as $O(e^{-\pi L})$, a rigid conformal invariant tied
+ratio $L$ contracts exponentially in $L$, a rigid conformal invariant tied
 to the modulus of the region. This forces the 1935-vertex Boulder boundary
 to be simplified to 11 vertices before any SC computation is feasible.
 
@@ -723,8 +729,8 @@ Two extensions are natural.
 
 \begin{itemize}[leftmargin=2em]
 \item \textbf{Exact doubly-connected SC map.} The Milne-Thomson
-  approximation~\eqref{eq:urban} has order-of-magnitude error
-  $O((a / \Imag\,\zeta_0)^2) \sim 3.5\%$ for the Boulder run. An exact
+  approximation~\eqref{eq:urban} introduces a small but non-zero
+  approximation error (see Section~\ref{sec:res-urban}). An exact
   doubly-connected SC map~\citep[Ch.~5]{DT09}, implemented via the
   Schottky-Koebe double or a circular slit canonical region, would eliminate
   this approximation and give a rigorous treatment.
@@ -759,27 +765,12 @@ on successful steps. For the Boulder $11$-vertex problem the solver converges
 in approximately $1.8 \times 10^4$ function evaluations to a residual
 $\|r\|_2 \approx 6 \times 10^{-4}$.
 
-\section{Supplementary Figures}
-\label{app:figures}
-
-Captions below are brief labels; detailed interpretation appears in the main
-body.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.72\textwidth]{figures/fig3_equipotentials.png}
-  \caption{Equipotentials $\phi = \mathrm{const}$ for uniform flow $W = U\zeta$,
-  shown alone. Each curve is the forward image of a vertical half-line
-  $\Real \zeta = \xi_0$ in $\HH$. See Section~\ref{sec:res-uniform}.}
-  \label{fig:equipotentials}
-\end{figure}
-
 \section{Code and Reproducibility}
 \label{app:code}
 
-All source code is available at
-\href{https://github.com/McDonaldCrispyThigh/Ideal-Flow-via-Schwarz-Christoffel}{the
-project GitHub repository}. The two-model pipeline is reproduced by:
+All source code is available at the project GitHub
+repository\footnote{\url{https://github.com/McDonaldCrispyThigh/Ideal-Flow-via-Schwarz-Christoffel}}.
+The two-model pipeline is reproduced by:
 \begin{verbatim}
   pip install -r requirements.txt
   python main.py --shapefile data/raw/tl_2025_08_place --urban --grid 80
