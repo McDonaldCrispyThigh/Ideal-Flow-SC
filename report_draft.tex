@@ -788,12 +788,13 @@ signature geometric visualisation of a conformal map.
 \subsection{Doubly-Connected Flow with an Urban Obstacle}
 \label{sec:res-urban}
 
-The downtown commercial core (OSMnx~\citep{BG17} landuse data, $0.82$\,km$^2$)
+The downtown commercial core (hardcoded downtown Boulder polygon,
+$9.2$\,km$^2$, clipped inside the county boundary)
 is mapped to $\HH$ via $f^{-1}$; its pre-image is enclosed by a minimum
 enclosing circle (Welzl's algorithm~\citep{Welzl91}) of radius $a$ centred at
 $\zeta_0 \in \HH$. The urban-obstacle potential~\eqref{eq:urban} then applies,
-with achieved separation ratio $\Imag(\zeta_0)/a \approx 5.36$ for the
-Boulder run, giving an $O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 3.5\%$
+with achieved separation ratio $\Imag(\zeta_0)/a \approx 3.96$ for the
+Boulder County run, giving an $O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 6.4\%$
 leading-order approximation error.
 
 Figure~\ref{fig:urban} shows the result. The Milne-Thomson dipole at
@@ -806,8 +807,8 @@ visibly around the purple obstacle, with local acceleration on its flanks.
   \includegraphics[width=0.65\textwidth]{figures/fig7_urban_flow.png}
   \caption{\textbf{Doubly-connected flow with urban-core obstacle via the
   Milne-Thomson circle theorem~\eqref{eq:urban}.} Downtown Boulder commercial
-  core shown in purple. Separation ratio $\Imag(\zeta_0)/a \approx 5.36$;
-  order-of-magnitude approximation error $\sim 3.5\%$. Streamlines deflect
+  core shown in purple. Separation ratio $\Imag(\zeta_0)/a \approx 3.96$;
+  order-of-magnitude approximation error $\sim 6.4\%$. Streamlines deflect
   around the obstacle, with a local acceleration on its flanks. Same grid
   resolution and contour counts as Figure~\ref{fig:uniform}.}
   \label{fig:urban}

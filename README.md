@@ -99,7 +99,7 @@ holomorphic in $\zeta$.
 | $a$ | obstacle radius in the $\zeta$-plane | dimensionless |
 | $Ua^2/(\zeta - \zeta_0)$ | dipole term (circle theorem); enforces $\psi=\mathrm{const}$ on $|\zeta-\zeta_0|=a$ | m²/s |
 | $Ua^2/(\zeta - \bar\zeta_0)$ | image dipole in lower half-plane; restores $\psi=0$ on $\mathbb{R}$ | m²/s |
-| $\mathrm{Im}(\zeta_0)/a$ | separation ratio; Boulder run achieves 5.36, giving $\approx 3.5\%$ approximation error | dimensionless |
+| $\mathrm{Im}(\zeta_0)/a$ | separation ratio; Boulder County run achieves 3.96, giving $\approx 6.4\%$ approximation error | dimensionless |
 
 Accuracy is $O\!\left((a/\mathrm{Im}\,\zeta_0)^2\right)$; exact doubly-connected SC via the
 Schottky double is noted as future work.
@@ -127,8 +127,8 @@ python main.py --shapefile data/raw/tl_2025_08_county --urban --grid 80
 | Douglas-Peucker simplification | Adaptive tolerance | ~14 vertices |
 | Extreme-angle removal | $\alpha \notin [0.35\pi,\, 1.75\pi]$ dropped | 12 vertices |
 | SC parameter solve | LM residual $\|r\|_2$ | $\approx 1.1\times10^{-2}$ |
-| Urban obstacle | OSM landuse data | $0.82\ \mathrm{km}^2$ commercial core |
-| Circle separation | $\mathrm{Im}(\zeta_0)/a$ | 5.36 |
+| Urban obstacle | Hardcoded downtown Boulder polygon | $9.2\ \mathrm{km}^2$ commercial core |
+| Circle separation | $\mathrm{Im}(\zeta_0)/a$ | 3.96 |
 
 ---
 
