@@ -43,10 +43,10 @@ $$f(\zeta) = A + C \int_{\zeta_0}^{\zeta} \prod_{k=1}^{n} (t - \zeta_k)^{\alpha_
 | $\zeta_k \in \mathbb{R}$ | $k$-th pre-vertex; real-axis pre-image of corner $w_k$ | dimensionless |
 | $\alpha_k$ | interior angle of corner $k$ as a fraction of $\pi$; satisfies $\sum_k \alpha_k = n-2$ | dimensionless |
 | $\alpha_k - 1$ | exponent; controls branch-point strength near vertex $k$ | dimensionless |
-| $n$ | number of polygon vertices (11 for simplified Boulder) | — |
+| $n$ | number of polygon vertices (12 for simplified Boulder) | — |
 
 **Pre-vertices** $\zeta_k$ are unknowns. Möbius normalisation fixes three
-($\zeta_0 = -1$, $\zeta_1 = 0$, $\zeta_{n-1} = 1$); the remaining $n - 3 = 8$ are
+($\zeta_0 = -1$, $\zeta_1 = 0$, $\zeta_{n-1} = 1$); the remaining $n - 3 = 9$ are
 found by Levenberg-Marquardt nonlinear least-squares matching edge-length ratios.
 
 ---

@@ -395,8 +395,12 @@ $W_0 = U\zeta$ the combined expression
   \label{eq:urban}
 \end{equation}
 is holomorphic in $\zeta$ (the variable in every denominator is $\zeta$
-itself), and both conditions hold simultaneously: the first additional term
-makes $\partial D$ a streamline; the second restores $\psi = 0$ on $\RR$.
+itself). The two correction terms enforce the boundary conditions in
+complementary ways: the image dipole at $\conj{\zeta_0}$ restores
+$\psi = 0$ on $\partial \HH$ \emph{exactly} (by the standard method-of-images
+argument, since the two poles are conjugate pairs on $\RR$); the dipole at
+$\zeta_0$ approximates the no-penetration condition on $\partial D$ to leading
+order in $(a/\Imag\,\zeta_0)^2$ (see the approximation error remark below).
 
 Figure~\ref{fig:mt-schematic} summarises the construction pictorially: a
 true dipole at $\zeta_0 \in \HH$, its reflection $\conj{\zeta_0}$ in the
@@ -505,7 +509,7 @@ are chosen from the crowding discussion of Section~\ref{sec:crowding}.
 \subsection{The SC Parameter Problem}
 \label{sec:param}
 
-The $n - 3 = 8$ free pre-vertices $\zeta_2, \dots, \zeta_{n-2} \in (0, 1)$
+The $n - 3 = 9$ free pre-vertices $\zeta_2, \dots, \zeta_{n-2} \in (0, 1)$
 are chosen so that the image polygon $f(\RR)$ has the correct side-length
 ratios. Define the $k$-th side length
 \begin{equation}
@@ -575,11 +579,12 @@ solution is computed via \texttt{numpy.linalg.lstsq}.
 \subsection{Forward Map and Streamline Computation}
 \label{sec:forward}
 
-All flow results are produced via the \emph{forward-map} approach. A dense
-$400 \times 400$ grid of $\zeta$ values in $\HH$ is mapped forward to
-$z = f(\zeta)$, each SC integral evaluated by a $400$-node Gauss--Legendre
-rule along an L-shaped path in $\HH$ that clears the real-axis branch cuts
-(Figure~\ref{fig:branch-path}). The complex potential $W(\zeta)$ is evaluated
+All flow results are produced via the \emph{forward-map} approach. A
+pre-vertex-adapted grid of $\zeta$ values in $\HH$ (dense samples between
+every adjacent pre-vertex pair, 60 logarithmically spaced imaginary parts)
+is mapped forward to $z = f(\zeta)$, each SC integral evaluated by a
+$250$-node Gauss--Legendre rule along an L-shaped path in $\HH$ that clears
+the real-axis branch cuts (Figure~\ref{fig:branch-path}). The complex potential $W(\zeta)$ is evaluated
 analytically at each $\zeta$ point. The resulting scattered pairs
 $(z_i, W(\zeta_i))$ are interpolated onto a regular physical-plane grid
 (\texttt{scipy.interpolate.griddata}, linear method), and contours of
@@ -756,7 +761,7 @@ of the Cauchy--Riemann equations~\eqref{eq:CR} wherever $f'(\zeta) \neq 0$.
   $\Imag \zeta = \eta_0$ in $\HH$; equipotentials are images of
   $\Real \zeta = \xi_0$. The SC map $f : \HH \to \Omega$ preserves angles
   locally, so the two families meet orthogonally throughout the interior.
-  Grid resolution $400 \times 400$ in $\HH$; 50 contours per family.
+  Pre-vertex-adapted $\zeta$-grid mapped to an $80 \times 80$ physical grid; 28 forward-mapped curves per family.
   Closed-streamline appearance is a topological consequence discussed above.}
   \label{fig:uniform}
 \end{figure}
