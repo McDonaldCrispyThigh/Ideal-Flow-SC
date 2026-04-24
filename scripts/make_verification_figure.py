@@ -122,14 +122,15 @@ def plot_figure_A(result, out_path_png, out_path_pdf):
     cost = result["cost_history"]
     s_err = np.abs(result["s_history"] - result["s_target"])
 
-    ax_b.semilogy(iters, np.maximum(cost, 1e-20), "-o",
+    ax_b.semilogy(iters, np.maximum(cost, 1e-16), "-o",
                   color="#1f77b4", markersize=3.5,
                   label=r"Side-ratio residual cost $\frac{1}{2}\,\|r\|_2^2$")
-    ax_b.semilogy(iters, np.maximum(s_err, 1e-20), "-s",
+    ax_b.semilogy(iters, np.maximum(s_err, 1e-16), "-s",
                   color="#d62728", markersize=3.5,
                   label=r"$|s_{\mathrm{computed}} - s_{\mathrm{exact}}|$")
     ax_b.axhline(1e-8, color="gray", linestyle="--", linewidth=0.8,
                  label=r"LM tolerance $10^{-8}$")
+    ax_b.set_ylim(1e-16, 1e-1)
     ax_b.set_xlabel("LM function evaluation", fontsize=11)
     ax_b.set_ylabel("Error magnitude (log scale)", fontsize=11)
     ax_b.set_title("(b) LM convergence on the rectangle verification",
@@ -137,12 +138,7 @@ def plot_figure_A(result, out_path_png, out_path_pdf):
     ax_b.grid(True, which="both", alpha=0.25)
     ax_b.legend(loc="upper right", fontsize=9)
 
-    fig.suptitle(
-        r"Rectangle verification: target $m(R) = 2$, exact "
-        rf"$s = 2\sqrt{{2}}/3 \approx {result['s_target']:.4f}$, "
-        rf"recovered $s = {result['s_recovered']:.6f}$",
-        fontsize=11, y=0.99)
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.tight_layout()
     fig.savefig(out_path_png, dpi=180, bbox_inches="tight")
     fig.savefig(out_path_pdf, bbox_inches="tight")
     plt.close(fig)

@@ -111,7 +111,7 @@ def figure_C(params, out_png, out_pdf):
     ax_right.grid(True, alpha=0.2)
 
     fig.suptitle(
-        "Figure C: pre-vertex $\\zeta_k$ on $\\mathbb{R}$ ↔ polygon vertex $w_k$ correspondence",
+        "Pre-vertex $\\zeta_k$ on $\\mathbb{R}$ and polygon vertex $w_k$ correspondence",
         fontsize=11, y=0.99)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(out_png, dpi=180, bbox_inches="tight")
@@ -162,8 +162,7 @@ def figure_D(params, out_png, out_pdf):
     ax.set_xlabel(r"$\mathrm{Re}\,z$", fontsize=11)
     ax.set_ylabel(r"$\mathrm{Im}\,z$", fontsize=11)
     ax.set_title(
-        r"Figure D: forward SC map pushes a rectangular grid in $\mathbb{H}$ "
-        r"into $\Omega$",
+        r"Forward image of a rectangular grid in $\mathbb{H}$ under $f : \mathbb{H} \to \Omega$",
         fontsize=11)
     ax.text(xmin + 0.05, ymax - 0.08,
             r"blue: images of horizontal lines $\mathrm{Im}\,\zeta = \eta_0$",
@@ -238,7 +237,7 @@ def figure_F(params, out_png, out_pdf):
         masked = np.where(inside, speed_grid, np.nan)
 
         vmin = np.nanpercentile(masked, 5)
-        vmax = np.nanpercentile(masked, 95)
+        vmax = np.nanpercentile(masked, 80)
 
         im = ax.imshow(
             masked,
@@ -266,8 +265,7 @@ def figure_F(params, out_png, out_pdf):
                       .replace(r"$\eqref*{eq:urban}$", "(urban)"))
 
     fig.suptitle(
-        r"Figure F: velocity magnitude $|W'(z)|$ heatmaps "
-        r"(5–95th percentile clipped)",
+        r"Normalised velocity magnitude $|W'(z)|/U$ (5th--80th percentile clipped)",
         fontsize=11, y=1.00)
     fig.tight_layout(rect=[0, 0, 1, 0.97])
     fig.savefig(out_png, dpi=180, bbox_inches="tight")

@@ -76,8 +76,7 @@ def plot_schematic(out_png, out_pdf):
     ax.set_aspect("auto")
     ax.set_xlabel(r"$\xi = \mathrm{Re}\,\zeta$", fontsize=11)
     ax.set_ylabel(r"$\eta = \mathrm{Im}\,\zeta$", fontsize=11)
-    ax.set_title("L-shaped integration path clears real-axis branch cuts",
-                 fontsize=11)
+    ax.set_title("", fontsize=11)
     ax.grid(True, alpha=0.2)
 
     fig.tight_layout()

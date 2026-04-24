@@ -110,7 +110,7 @@ def plot_figure_B(results, out_png, out_pdf):
         r"SC crowding: pre-vertex spacing decays exponentially with conformal modulus",
         fontsize=11)
     ax.set_xlim(1.0, 12.0)
-    ax.set_ylim(1e-20, 2.0)
+    ax.set_ylim(1e-16, 1e-1)
     ax.grid(True, which="both", alpha=0.25)
     ax.legend(loc="upper right", fontsize=9)
 

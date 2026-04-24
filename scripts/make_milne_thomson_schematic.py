@@ -19,9 +19,9 @@ def plot_schematic(out_png, out_pdf):
     ax.axhspan(0.0, 2.5, color="#eef4ff", alpha=0.5, zorder=0)
     ax.axhspan(-2.5, 0.0, color="#f5f0ff", alpha=0.5, zorder=0)
     ax.text(-2.3, 2.25, r"Upper half-plane $\mathbb{H}$",
-            fontsize=10, color="#334")
+            fontsize=12, color="#334")
     ax.text(-2.3, -2.35, r"Image plane (below $\mathbb{R}$)",
-            fontsize=10, color="#443355")
+            fontsize=12, color="#443355")
 
     circle_true = Circle(zeta0, a, fill=False, edgecolor="#d62728",
                          linewidth=1.8, zorder=4)
@@ -37,12 +37,12 @@ def plot_schematic(out_png, out_pdf):
 
     ax.annotate(r"$\zeta_0$, obstacle centre",
                 xy=zeta0, xytext=(zeta0[0] + 0.65, zeta0[1] + 0.2),
-                fontsize=10, color="#d62728",
+                fontsize=12, color="#d62728",
                 arrowprops=dict(arrowstyle="->", color="#d62728",
                                 shrinkA=3, shrinkB=3))
-    ax.annotate(r"$\bar{\zeta}_0$, mirror image",
+    ax.annotate(r"$\overline{\zeta}_0$, mirror image",
                 xy=zeta0_bar, xytext=(zeta0_bar[0] + 0.65, zeta0_bar[1] - 0.2),
-                fontsize=10, color="#1f77b4",
+                fontsize=12, color="#1f77b4",
                 arrowprops=dict(arrowstyle="->", color="#1f77b4",
                                 shrinkA=3, shrinkB=3))
 
@@ -51,17 +51,17 @@ def plot_schematic(out_png, out_pdf):
                 arrowprops=dict(arrowstyle="->", color="#d62728",
                                 linewidth=1.8, mutation_scale=15))
     ax.text(zeta0[0], zeta0[1] - 0.15, "dipole",
-            fontsize=8, color="#d62728", ha="center")
+            fontsize=10, color="#d62728", ha="center")
 
     ax.annotate("", xy=(zeta0_bar[0] + 0.28, zeta0_bar[1]),
                 xytext=(zeta0_bar[0] - 0.28, zeta0_bar[1]),
                 arrowprops=dict(arrowstyle="->", color="#1f77b4",
                                 linewidth=1.4, mutation_scale=15))
     ax.text(zeta0_bar[0], zeta0_bar[1] - 0.15, "image dipole",
-            fontsize=8, color="#1f77b4", ha="center")
+            fontsize=10, color="#1f77b4", ha="center")
 
     t = np.linspace(-2.2, 2.2, 400)
-    for y0 in [0.35, 0.7, 1.0, 1.8, 2.15]:
+    for y0 in [0.25, 0.55, 0.85, 1.15, 1.5, 1.8, 2.05, 2.2]:
         x = t
         y = y0 + 0.22 * np.exp(-((x - zeta0[0]) ** 2) / 0.25) * np.sign(y0 - zeta0[1])
         inside = np.sqrt((x - zeta0[0]) ** 2 + (y - zeta0[1]) ** 2) > a + 0.03
@@ -71,12 +71,12 @@ def plot_schematic(out_png, out_pdf):
                 alpha=0.7, zorder=2)
 
     ax.text(0.6, 0.05, r"$\psi = 0$ on $\partial\mathbb{H}$ by image sum",
-            fontsize=9, color="#444", ha="center",
+            fontsize=11, color="#444", ha="center",
             bbox=dict(facecolor="white", edgecolor="none", alpha=0.85))
 
     ax.text(zeta0[0] + a + 0.05, zeta0[1] + a - 0.1,
             r"$|\zeta - \zeta_0| = a$",
-            fontsize=9, color="#d62728")
+            fontsize=11, color="#d62728")
 
     ax.set_xlim(-2.6, 2.6)
     ax.set_ylim(-2.6, 2.6)

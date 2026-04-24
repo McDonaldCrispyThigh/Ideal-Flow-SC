@@ -481,7 +481,10 @@ the stable regime.
   Red circles: spacings recovered by our SC solver on rectangles of aspect
   ratio $L \in \{1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7\}$; they track the
   theoretical curve until the quadrature error of plain Gauss--Legendre at
-  the branch-point endpoints ($\sim 10^{-5}$) dominates.}
+  the branch-point endpoints ($\sim 10^{-3}$--$10^{-4}$) dominates. The
+  dashed orange line at $10^{-8}$ marks the threshold below which the
+  pre-vertex spacing falls within the LM solver's default tolerance and
+  can no longer be reliably recovered.}
   \label{fig:crowding}
 \end{figure}
 
@@ -556,7 +559,7 @@ close neighbours.
   $\zeta_0 = -1, \zeta_1 = 0, \zeta_{n-1} = 1$; the eight filled circles
   are free pre-vertices recovered by the solver. Panel (b) gives each
   vertex with its interior angle $\alpha_k \pi$. Clustering of pre-vertices
-  near $\zeta = 0$ reflects the asymmetric edge-length distribution of the
+  in $[0, 0.5]$ reflects the asymmetric edge-length distribution of the
   simplified Boulder boundary.}
   \label{fig:prevertex-polygon}
 \end{figure}
@@ -596,9 +599,11 @@ boundary.
   $\prod_k (t - \zeta_k)^{\alpha_k - 1}$. The blue square is the reference
   point $\zeta_{\mathrm{ref}} = 0.5i$; the green star is a target $\zeta$
   in $\HH$. The path is taken horizontally within $\HH$ to the target's
-  real part, then vertically to the target, keeping distance from the
-  real-axis branch points and preserving the chosen branch of the SC
-  integrand.}
+  real part (horizontal leg at $\Imag\,\zeta = 0.5$, passing above the
+  pre-vertices on $\RR$), then vertically to the target. Both legs stay
+  strictly above the real axis, so they never cross a branch cut (which
+  extends downward from each $\zeta_k$ into the lower half-plane),
+  preserving the chosen branch of the SC integrand.}
   \label{fig:branch-path}
 \end{figure}
 
@@ -658,31 +663,33 @@ the pre-vertex position and side-length residual $\|r\|_2 \approx 7 \times 10^{-
 The residual floor is set by the plain Gauss--Legendre quadrature of the SC
 integrand, which has integrable $(t - \zeta_k)^{-1/2}$ branch-point
 singularities at each interval endpoint; $N = 500$ nodes without endpoint
-substitution gives accuracy $O(N^{-2}) \approx 4 \times 10^{-6}$ on each
+substitution gives accuracy $O(N^{-1}) \approx 2 \times 10^{-3}$ on each
 sub-integral, and this propagates into the pre-vertex recovery. A
 Duffy-type substitution $t - \zeta_k = u^2$ would absorb the singularity and
-push the floor to near machine precision, at the cost of re-working the
+push the convergence to near machine precision, at the cost of re-working the
 quadrature module. The pipeline's current accuracy of $\sim 10^{-4}$ on the
-pre-vertex is already sufficient to anchor the qualitative Boulder results
-of Section~\ref{sec:apply} to an independent analytic benchmark.
+pre-vertex is sufficient for the qualitative Boulder results of
+Section~\ref{sec:apply}.
 Figure~\ref{fig:verify} shows the target configuration and the LM
 convergence history.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{figures/figA_rectangle_verification.png}
-  \caption{\textbf{Rectangle verification of the SC pipeline.} (a) Upper
-  half-plane $\mathbb{H}$ with the pipeline's pre-vertex layout: blue
-  squares are the three M\"obius-fixed anchors $\{-1, 0, 1\}$; the red
-  circle is the free pre-vertex $s$, with exact value
-  $2\sqrt{2}/3 \approx 0.9428$ for a $2 \times 1$ target rectangle
-  ($k = 1/\sqrt{2}$). A rectangular reference grid on $\mathbb{H}$ is
-  overlaid to illustrate the conformal-grid image structure used in
-  Section~\ref{sec:apply}. (b) Levenberg--Marquardt convergence: the
-  side-length residual cost $\tfrac12\|r\|_2^2$ and the pre-vertex error
-  $|s_{\text{computed}} - s_{\text{exact}}|$ both plateau at
-  $\sim 10^{-4}$--$10^{-5}$, consistent with the $O(N^{-2})$ quadrature
-  error of plain Gauss--Legendre at branch-point endpoints.}
+  \caption{\textbf{Rectangle verification of the SC pipeline.} Target:
+  $m(R) = 2$ rectangle, exact $s = 2\sqrt{2}/3 \approx 0.94281$; recovered
+  $s \approx 0.94296$. (a) Upper half-plane $\mathbb{H}$ with the pipeline's
+  pre-vertex layout: blue squares are the three M\"obius-fixed anchors
+  $\{-1, 0, 1\}$; the red circle is the free pre-vertex $s$ at its exact
+  position for $k = 1/\sqrt{2}$. A rectangular reference grid on
+  $\mathbb{H}$ is overlaid to illustrate the conformal-grid image structure
+  used in Section~\ref{sec:apply}. (b) Levenberg--Marquardt convergence:
+  the side-length residual cost $\tfrac{1}{2}\|r\|_2^2$ plateaus near
+  $3 \times 10^{-9}$ while the pre-vertex error
+  $|s_{\text{computed}} - s_{\text{exact}}|$ plateaus near
+  $1.5 \times 10^{-4}$; the two curves stall at different floors,
+  consistent with the $O(N^{-1})$ quadrature convergence rate at
+  branch-point endpoints.}
   \label{fig:verify}
 \end{figure}
 
@@ -773,8 +780,8 @@ signature geometric visualisation of a conformal map.
   images of vertical lines $\Real\,\zeta = \xi_0$ for
   $\xi_0 \in [-2.4, 2.4]$. The two families remain orthogonal throughout
   $\Omega$, confirming conformality of $f$. Compare with
-  Figure~\ref{fig:uniform}(b), which shows the same grid labelled as flow
-  streamlines and equipotentials.}
+  Figure~\ref{fig:uniform}(b), which shows the same type of conformal grid
+  labelled as flow streamlines and equipotentials.}
   \label{fig:conformal-grid}
 \end{figure}
 
@@ -786,8 +793,8 @@ is mapped to $\HH$ via $f^{-1}$; its pre-image is enclosed by a minimum
 enclosing circle (Welzl's algorithm~\citep{Welzl91}) of radius $a$ centred at
 $\zeta_0 \in \HH$. The urban-obstacle potential~\eqref{eq:urban} then applies,
 with achieved separation ratio $\Imag(\zeta_0)/a \approx 5.36$ for the
-Boulder run; the $O((a/\Imag\,\zeta_0)^2) \approx 3.5\%$ leading-order
-estimate of Section~\ref{sec:MT} applies.
+Boulder run, giving an $O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 3.5\%$
+leading-order approximation error.
 
 Figure~\ref{fig:urban} shows the result. The Milne-Thomson dipole at
 $\zeta_0$ enforces no-penetration on the enclosing circle; the image term
@@ -819,13 +826,13 @@ obstacle that the streamline figure only hints at qualitatively.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{figures/figF_velocity_heatmap.png}
-  \caption{\textbf{Velocity magnitude $|W'(z)| = |W'(\zeta)/f'(\zeta)|$ for
-  the two flow models.} (a) Uniform flow: speed rises sharply near
-  polygon vertices where $f'(\zeta_k) \to 0$. (b) Urban-obstacle
-  potential: two additional bright regions on the flanks of the downtown
-  core quantify the ``local acceleration'' visible in
-  Figure~\ref{fig:urban}. Colour bar clipped to the 5th--95th percentile
-  to suppress the finite-grid blow-up at vertex branch points.}
+  \caption{\textbf{Normalised velocity magnitude $|W'(z)|/U$ for the two
+  flow models.} (a) Uniform flow: speed rises sharply near polygon vertices
+  where $f'(\zeta_k) \to 0$. (b) Urban-obstacle potential: two additional
+  bright regions on the flanks of the downtown core quantify the ``local
+  acceleration'' visible in Figure~\ref{fig:urban}. Colour bar clipped to
+  the 5th--80th percentile to suppress the finite-grid blow-up at vertex
+  branch points while keeping the flank acceleration visible.}
   \label{fig:speed}
 \end{figure}
 
@@ -848,8 +855,8 @@ the no-penetration condition exactly by construction. Two complex potentials
 were derived in detail and visualised on the Boulder polygon: uniform flow
 and a doubly-connected model with a Milne-Thomson interior obstacle. A
 closed-form verification on the rectangle-to-half-plane map (an
-elliptic-integral identity) confirmed the numerical pipeline at machine
-precision.
+elliptic-integral identity) confirmed the numerical pipeline to within the
+expected quadrature-limited accuracy ($\sim 10^{-4}$).
 
 The principal mathematical content is the interplay between conformal-mapping
 theory (Riemann Mapping Theorem, SC integral formula, interior-angle
@@ -875,7 +882,7 @@ Two extensions are natural.
   approximation~\eqref{eq:urban} introduces a small but non-zero
   approximation error (see Section~\ref{sec:res-urban}). An exact
   doubly-connected SC map~\citep[Ch.~5]{DT09}, implemented via the
-  Schottky-Koebe double or a circular slit canonical region, would eliminate
+  Schottky double or a circular slit canonical region, would eliminate
   this approximation and give a rigorous treatment.
 
 \item \textbf{Multiply connected domains.} The formalism extends to domains
