@@ -439,15 +439,32 @@ $K(k)$~\citep[{\S}19.12]{NIST10} gives the inner pre-vertex spacing
 \paragraph{Consequence for general polygons.}
 For a general polygon containing a long thin region of aspect ratio $L$, the
 pre-vertex spacing across that region contracts exponentially in
-$L$~\citep[Ch.~2]{DT09}. For $L = 5$ the inner spacing is already
-$\approx 10^{-3}$, for $L = 10$ the spacing is $\approx 10^{-7}$, and for
-$L \gtrsim 13$ it falls below $10^{-9}$ and becomes difficult to resolve
-reliably in double precision. This limits SC solvers to $n \lesssim 20$
-vertices with mild aspect ratios, and is the reason the 1935-vertex Boulder
-boundary must be simplified to an 11-vertex polygon
-(Section~\ref{sec:preprocess}). The chosen simplification has all interior
-angles confined to $[0.35\pi, 1.75\pi]$, keeping the conformal modulus of
-each sub-region within the stable regime.
+$L$~\citep[Ch.~2]{DT09}. Figure~\ref{fig:crowding} shows both the theoretical
+crowding curve and the pre-vertex spacings recovered by our SC solver on a
+family of rectangles of varying aspect ratio. The spacing drops below
+$10^{-4}$ at $L \approx 4$ and below $10^{-8}$ at $L \approx 7$; beyond
+$L \gtrsim 10$ the spacing approaches double precision and the parameter
+problem becomes ill-posed. This limits SC solvers to $n \lesssim 20$ vertices
+with mild aspect ratios, and is the reason the 1935-vertex Boulder boundary
+must be simplified to an 11-vertex polygon (Section~\ref{sec:preprocess}).
+The chosen simplification has all interior angles confined to
+$[0.35\pi, 1.75\pi]$, keeping the conformal modulus of each sub-region within
+the stable regime.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.78\textwidth]{figures/figB_sc_crowding.png}
+  \caption{\textbf{SC crowding: pre-vertex spacing as a function of
+  rectangle aspect ratio $L = 2K(k)/K'(k)$.} Solid blue: exact inner spacing
+  $1 - s$ in the pipeline normalisation $\{-1, 0, s, 1\}$, where
+  $s = 2k/(1 + k^2)$ by~\eqref{eq:s-of-k}. Dashed grey: classical
+  asymptotic $8 e^{-\pi L/2}$ for $1/k - 1$ in the symmetric normalisation.
+  Red circles: spacings recovered by our SC solver on rectangles of aspect
+  ratio $L \in \{1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7\}$; they track the
+  theoretical curve until the quadrature error of plain Gauss--Legendre at
+  the branch-point endpoints ($\sim 10^{-5}$) dominates.}
+  \label{fig:crowding}
+\end{figure}
 
 \section{Numerical Implementation}
 \label{sec:numerical}
@@ -575,20 +592,43 @@ must recover the corresponding $s$ determined by~\eqref{eq:s-of-k}.
 
 \paragraph{Numerical verification.}
 Take $m(R) = 2$ (the standard $2 \times 1$ rectangle), which corresponds to
-$K(k) = K'(k)$, hence $k = 1/\sqrt{2}$ and $s = 2\sqrt{2}/3 \approx 0.9428$.
-The softmax~+~Levenberg--Marquardt solver converges to $s$ with relative
-error below $10^{-8}$, limited by the LM convergence tolerance on side-length
-ratios.
+$K(k) = K'(k)$, hence $k = 1/\sqrt{2}$ and
+$s_{\text{exact}} = 2\sqrt{2}/3 \approx 0.94281$. The
+softmax~+~Levenberg--Marquardt solver converges to
+$s_{\text{recovered}} = 0.94296$, giving absolute error
+$|s_{\text{recovered}} - s_{\text{exact}}| \approx 1.5 \times 10^{-4}$ on
+the pre-vertex position and side-length residual $\|r\|_2 \approx 7 \times 10^{-5}$.
 
-For the SC integrand itself, each sub-integral between adjacent pre-vertices
-has integrable $(t - \zeta_k)^{-1/2}$ endpoint singularities. We absorb each
-singularity with the substitution $t - \zeta_k = u^2$ (or its analog at the
-right endpoint), after which the transformed integrand is smooth and
-$500$-node Gauss--Legendre converges to relative error below $10^{-6}$ per
-sub-interval. The corner-image values $f(\pm 1) = \pm K(k)$ computed by the
-pipeline match the closed-form $K(1/\sqrt{2}) = 1.85407\ldots$ to this
-tolerance. The verification thus anchors the Boulder results of
-Section~\ref{sec:apply} to an independent analytic benchmark.
+The residual floor is set by the plain Gauss--Legendre quadrature of the SC
+integrand, which has integrable $(t - \zeta_k)^{-1/2}$ branch-point
+singularities at each interval endpoint; $N = 500$ nodes without endpoint
+substitution gives accuracy $O(N^{-2}) \approx 4 \times 10^{-6}$ on each
+sub-integral, and this propagates into the pre-vertex recovery. A
+Duffy-type substitution $t - \zeta_k = u^2$ would absorb the singularity and
+push the floor to near machine precision, at the cost of re-working the
+quadrature module. The pipeline's current accuracy of $\sim 10^{-4}$ on the
+pre-vertex is already sufficient to anchor the qualitative Boulder results
+of Section~\ref{sec:apply} to an independent analytic benchmark.
+Figure~\ref{fig:verify} shows the target configuration and the LM
+convergence history.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/figA_rectangle_verification.png}
+  \caption{\textbf{Rectangle verification of the SC pipeline.} (a) Upper
+  half-plane $\mathbb{H}$ with the pipeline's pre-vertex layout: blue
+  squares are the three M\"obius-fixed anchors $\{-1, 0, 1\}$; the red
+  circle is the free pre-vertex $s$, with exact value
+  $2\sqrt{2}/3 \approx 0.9428$ for a $2 \times 1$ target rectangle
+  ($k = 1/\sqrt{2}$). A rectangular reference grid on $\mathbb{H}$ is
+  overlaid to illustrate the conformal-grid image structure used in
+  Section~\ref{sec:apply}. (b) Levenberg--Marquardt convergence: the
+  side-length residual cost $\tfrac12\|r\|_2^2$ and the pre-vertex error
+  $|s_{\text{computed}} - s_{\text{exact}}|$ both plateau at
+  $\sim 10^{-4}$--$10^{-5}$, consistent with the $O(N^{-2})$ quadrature
+  error of plain Gauss--Legendre at branch-point endpoints.}
+  \label{fig:verify}
+\end{figure}
 
 \section{Application to the Boulder Polygon}
 \label{sec:apply}
