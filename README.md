@@ -183,8 +183,10 @@ confirming conformality.
 Schematic of the circle theorem proof via Schwarz reflection. The red circle marks
 the obstacle $|\zeta - \zeta_0| = a$, with a dipole at $\zeta_0 \in \mathbb{H}$;
 a dashed blue mirror circle with its image dipole at $\bar\zeta_0$ sits below
-$\mathbb{R}$. Green streamlines show how the dipole sum enforces $\psi = 0$
-simultaneously on $\partial D$ and $\partial\mathbb{H}$.
+$\mathbb{R}$. The image dipole at $\bar\zeta_0$ restores $\psi = 0$ on
+$\partial\mathbb{H}$ exactly (conjugate-pole cancellation); the dipole at $\zeta_0$
+enforces $\psi \approx \mathrm{const}$ on $\partial D$ to leading order in
+$(a/\mathrm{Im}\,\zeta_0)^2$.
 
 ### Fig F: Velocity Magnitude Heatmaps
 
@@ -206,21 +208,103 @@ vertical leg descends at a fixed real part to the target. Both legs stay strictl
 above the real axis, keeping the path entirely clear of every branch cut (which
 extends downward from each $\zeta_k$ into the lower half-plane).
 
-### Figs 1 to 4: Uniform Flow in Boulder
+### Fig 1: Boundary Simplification
 
-| Figure | File | Description |
-|--------|------|-------------|
-| Fig 1 | `fig1_polygon_comparison.png` | Original 2752-vertex vs. 12-vertex simplified boundary |
-| Fig 2 | `fig2_streamlines.png` | Streamlines $\psi = \mathrm{const}$ under $W = U\zeta$ |
-| Fig 3 | `fig3_equipotentials.png` | Equipotentials $\phi = \mathrm{const}$ |
-| Fig 4 | `fig4_combined.png` | Conformal grid (streamlines + equipotentials) |
+![Polygon comparison](figures/fig1_polygon_comparison.png)
 
-### Fig 7 — Urban-Core Obstacle
+Original TIGER/Line boundary (2752 vertices, left) alongside the 12-vertex Douglas-Peucker
+simplification used in the SC computation (right). Vertices are marked as dots; the simplified
+polygon retains the gross shape of Boulder County while reducing the SC parameter problem to
+a tractable size.
+
+### Fig 2: Streamlines — Uniform Flow
+
+![Streamlines](figures/fig2_streamlines.png)
+
+Streamlines $\psi = \mathrm{const}$ under the baseline uniform potential $W = U\zeta$
+mapped into the Boulder County polygon. Lines follow the forward-mapped $\zeta$-grid
+pushed through $f$; conformality keeps spacing proportional to local flow speed.
+
+### Fig 3: Equipotential Lines — Uniform Flow
+
+![Equipotentials](figures/fig3_equipotentials.png)
+
+Equipotential lines $\phi = \mathrm{const}$ for the same uniform potential. By the
+Cauchy-Riemann equations the equipotentials are everywhere orthogonal to the streamlines
+in Fig 2, confirming the conformal mapping is working correctly.
+
+### Fig 4: Conformal Grid — Uniform Flow
+
+![Combined grid](figures/fig4_combined.png)
+
+Streamlines (blue) and equipotentials (red-orange) overlaid into a single conformal grid.
+The two families are orthogonal throughout the polygon interior; their intersection pattern
+encodes the local velocity magnitude $|W'(z)| = |dW/dz|$.
+
+### Fig 5: Terrain-Informed Flow
+
+![Terrain flow](figures/fig5_terrain_flow.png)
+
+Flow modified by point sources at each polygon vertex, weighted by the DEM elevation
+interpolated via RBF. High-elevation (red triangle) and low-elevation (blue inverted
+triangle) vertices are marked; the downhill arrow shows the terrain-inferred preferred
+flow direction.
+
+### Fig 6: Uniform vs. Terrain-Corrected Flow
+
+![Flow comparison](figures/fig6_flow_comparison.png)
+
+Side-by-side comparison of uniform flow $W = U\zeta$ (left) and the terrain-corrected
+potential (right). Terrain sources redirect streamlines toward topographic lows, producing
+asymmetric convergence zones absent in the baseline.
+
+### Fig 7: Urban-Core Obstacle
 
 ![Urban flow](figures/fig7_urban_flow.png)
 
-Doubly-connected flow with the Milne-Thomson obstacle. Streamlines deflect around the
-purple downtown core; local acceleration on its flanks is quantified in Fig F.
+Doubly-connected flow with the Milne-Thomson urban-core obstacle. Streamlines (blue)
+deflect around the purple downtown-core polygon; the velocity acceleration on the north
+and south flanks of the obstacle is quantified in Fig F.
+
+### Fig 8a: Three-Way Streamline Comparison
+
+![Three-way comparison](figures/fig8_three_way_comparison.png)
+
+Panel (a) uniform, (b) terrain-corrected, (c) urban-obstacle streamlines at matched
+contour levels. Generated when terrain data is available alongside the urban obstacle run.
+
+### Fig 8b: Urban-Obstacle vs. Uniform Flow
+
+![Urban vs uniform](figures/fig8_urban_vs_uniform.png)
+
+Side-by-side comparison of uniform flow (left) and the Milne-Thomson urban-obstacle
+potential (right). Generated when terrain data is not available.
+
+### Fig 9: Road-Vortex Flow
+
+![Road vortex flow](figures/fig9_road_flow.png)
+
+Flow modified by point vortices placed at major OSM road intersections inside the
+polygon. CCW vortices (red triangles) and CW vortices (blue inverted triangles) are
+shown; each vortex-image pair enforces $\psi = 0$ on $\partial\mathbb{H}$ by the
+method of images.
+
+### Fig 10: Uniform vs. Road-Vortex Flow
+
+![Road vs uniform](figures/fig10_road_vs_uniform.png)
+
+Side-by-side comparison of uniform flow (left) and the road-vortex potential (right).
+Intersection vortices produce localised circulation cells visible as closed streamline
+loops near the marked vertices.
+
+### Fig 11: Four-Way Streamline Comparison
+
+![Four-way comparison](figures/fig11_four_way_comparison.png)
+
+All four flow models at matched contour levels: (a) uniform $W = U\zeta$, (b)
+terrain-corrected (RBF sources), (c) Milne-Thomson urban obstacle, (d) OSM road
+vortices. Illustrates the progressive physical enrichment of the conformal-mapping
+framework.
 
 ---
 
