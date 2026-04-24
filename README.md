@@ -1,6 +1,6 @@
 # Ideal Fluid Flow via the Schwarz-Christoffel Transformation
 
-**Complex Variables and Applications — Spring 2026**  
+**Complex Variables and Applications, Spring 2026**  
 Congyuan Zheng · Sophia Arany · Alexander Ingalls  
 University of Colorado Boulder, Department of Applied Mathematics
 
@@ -9,8 +9,10 @@ University of Colorado Boulder, Department of Applied Mathematics
 ## Overview
 
 This project applies the **Schwarz-Christoffel (SC) conformal mapping** to simulate
-steady, irrotational, incompressible ideal fluid flow inside the Boulder, Colorado city
-boundary polygon. Two flow models are derived, verified, and visualised:
+ideal incompressible fluid flow inside the Boulder, Colorado city boundary polygon, with
+the additional physical constraint that the velocity field is irrotational and the flow
+is in steady state. Two flow models are derived and visualised, each confirmed against a
+closed-form benchmark:
 
 | Model | Potential $W(\zeta)$ | Physical meaning |
 |-------|----------------------|-----------------|
@@ -53,7 +55,7 @@ found by Levenberg-Marquardt nonlinear least-squares matching edge-length ratios
 
 | Detail | Value |
 |--------|-------|
-| Parameterisation | Softmax reparameterisation $\zeta_k \in (0,1)$ — ordering and box constraints automatic |
+| Parameterisation | Softmax reparameterisation, $\zeta_k \in (0,1)$; ordering and box constraints are automatic |
 | Quadrature | $N = 500$-node Gauss-Legendre; convergence rate $O(N^{-1})$ at branch-point endpoints |
 | Pre-vertex accuracy | $\sim 10^{-4}$ (set by plain GL at $(t-\zeta_k)^{-1/2}$ singularities) |
 | LM residual (Boulder 11-vertex) | $\|r\|_2 \approx 6 \times 10^{-4}$ |
@@ -85,9 +87,10 @@ radius $a$). By the Milne-Thomson circle theorem (proved via Schwarz reflection)
 
 $$W_{\mathrm{urban}}(\zeta) = U\zeta + \frac{Ua^2}{\zeta - \zeta_0} + \frac{Ua^2}{\zeta - \bar\zeta_0}$$
 
-Note: every denominator contains the holomorphic variable $\zeta$; the third term uses
-$\bar\zeta_0$ (a fixed complex constant), not $\bar\zeta$. This is the form that keeps
-$W_{\mathrm{urban}}$ holomorphic in $\zeta$.
+Every denominator contains the holomorphic variable $\zeta$ alone. In the third term,
+the denominator is $\zeta - \bar\zeta_0$, where $\bar\zeta_0$ is a fixed complex
+constant with no $\zeta$-dependence. This structure keeps $W_{\mathrm{urban}}$
+holomorphic in $\zeta$.
 
 | Symbol | Meaning | Units |
 |--------|---------|-------|
@@ -131,7 +134,7 @@ python main.py --shapefile data/raw/tl_2025_08_place --urban --grid 80
 
 ## Figures
 
-### Fig A — Rectangle Verification
+### Fig A: Rectangle Verification
 
 ![Rectangle verification](figures/figA_rectangle_verification.png)
 
@@ -142,18 +145,19 @@ residual cost plateaus near $3\times10^{-9}$ while the pre-vertex error stalls a
 $\sim1.5\times10^{-4}$, both floors set by $O(N^{-1})$ Gauss-Legendre quadrature
 at the branch-point endpoints.
 
-### Fig B — SC Crowding
+### Fig B: SC Crowding
 
 ![SC crowding](figures/figB_sc_crowding.png)
 
 Pre-vertex spacing $1 - s$ as a function of rectangle aspect ratio $L = 2K(k)/K'(k)$.
-Solid blue: exact spacing in the pipeline's $\{-1, 0, s, 1\}$ normalisation, where
-$s = 2k/(1+k^2)$. Dashed grey: classical asymptotic $8e^{-\pi L/2}$. Red circles:
-spacings recovered by the solver. The orange dashed line at $10^{-8}$ marks the
-threshold below which the spacing falls inside the LM solver's tolerance and cannot
-be reliably recovered.
+The solid blue curve gives the exact inner spacing in the pipeline normalisation
+$\{-1, 0, s, 1\}$, where $s = 2k/(1+k^2)$. The dashed grey line shows the classical
+asymptotic $8e^{-\pi L/2}$ for the symmetric normalisation. Red circles mark spacings
+recovered by the solver; they track the theoretical curve until quadrature error
+dominates. The orange dashed threshold at $10^{-8}$ marks the boundary of reliable
+recovery, below which the spacing lies inside the LM solver's tolerance.
 
-### Fig C — Pre-vertex / Polygon Correspondence
+### Fig C: Pre-vertex and Polygon Correspondence
 
 ![Pre-vertex polygon](figures/figC_prevertex_polygon.png)
 
@@ -163,7 +167,7 @@ mark the three Möbius-fixed anchors $\{-1, 0, 1\}$. Clustering of pre-vertices 
 $[0, 0.5]$ reflects the asymmetric edge-length distribution of the simplified Boulder
 boundary.
 
-### Fig D — Conformal Grid
+### Fig D: Conformal Grid
 
 ![Conformal grid](figures/figD_conformal_grid.png)
 
@@ -172,16 +176,17 @@ blue; vertical lines $\mathrm{Re}\,\zeta = \xi_0$ in orange) pushed forward thro
 $f$ into $\Omega$. The two families remain orthogonal throughout the polygon interior,
 confirming conformality.
 
-### Fig E — Milne-Thomson Image Construction
+### Fig E: Milne-Thomson Image Construction
 
 ![Milne-Thomson schematic](figures/figE_milne_thomson_schematic.png)
 
-Schematic of the circle theorem proof via Schwarz reflection. Red: obstacle circle
-$|\zeta - \zeta_0| = a$ and dipole at $\zeta_0 \in \mathbb{H}$. Blue dashed: mirror
-circle and image dipole at $\bar\zeta_0$ below $\mathbb{R}$. Green streamlines show
-how the dipole sum enforces $\psi = 0$ simultaneously on $\partial D$ and $\partial\mathbb{H}$.
+Schematic of the circle theorem proof via Schwarz reflection. The red circle marks
+the obstacle $|\zeta - \zeta_0| = a$, with a dipole at $\zeta_0 \in \mathbb{H}$;
+a dashed blue mirror circle with its image dipole at $\bar\zeta_0$ sits below
+$\mathbb{R}$. Green streamlines show how the dipole sum enforces $\psi = 0$
+simultaneously on $\partial D$ and $\partial\mathbb{H}$.
 
-### Fig F — Velocity Magnitude Heatmaps
+### Fig F: Velocity Magnitude Heatmaps
 
 ![Velocity heatmap](figures/figF_velocity_heatmap.png)
 
@@ -191,17 +196,17 @@ at vertex branch points while keeping the flank acceleration visible. The urban-
 panel shows two bright acceleration zones on the north and south flanks of the downtown
 core.
 
-### Fig G — Branch-Cut Integration Path
+### Fig G: Branch-Cut Integration Path
 
 ![Branch-cut path](figures/figG_branch_cut_path.png)
 
-L-shaped path used to evaluate each SC integral in the forward map without crossing
-branch cuts. The horizontal leg stays at $\mathrm{Im}\,\zeta = 0.5$ (passing above
-the pre-vertices on $\mathbb{R}$); the vertical leg descends at a fixed real part to
-the target. Both legs stay strictly above the real axis, so no branch cut (which
-extends downward from each $\zeta_k$) is ever crossed.
+L-shaped integration path for the forward SC map. The horizontal leg travels at
+$\mathrm{Im}\,\zeta = 0.5$, passing above the pre-vertices on $\mathbb{R}$; the
+vertical leg descends at a fixed real part to the target. Both legs stay strictly
+above the real axis, keeping the path entirely clear of every branch cut (which
+extends downward from each $\zeta_k$ into the lower half-plane).
 
-### Figs 1–4 — Uniform Flow in Boulder
+### Figs 1 to 4: Uniform Flow in Boulder
 
 | Figure | File | Description |
 |--------|------|-------------|
