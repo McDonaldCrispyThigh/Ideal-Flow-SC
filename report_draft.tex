@@ -398,6 +398,25 @@ is holomorphic in $\zeta$ (the variable in every denominator is $\zeta$
 itself), and both conditions hold simultaneously: the first additional term
 makes $\partial D$ a streamline; the second restores $\psi = 0$ on $\RR$.
 
+Figure~\ref{fig:mt-schematic} summarises the construction pictorially: a
+true dipole at $\zeta_0 \in \HH$, its reflection $\conj{\zeta_0}$ in the
+lower half-plane, and the obstacle circle together with its mirror; a few
+schematic streamlines bend around the obstacle while remaining horizontal
+far away.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.75\textwidth]{figures/figE_milne_thomson_schematic.png}
+  \caption{\textbf{Milne-Thomson image construction in $\mathbb{H}$.}
+  Red: obstacle centre $\zeta_0$ and its circle $\abs{\zeta - \zeta_0} = a$.
+  Blue: real-axis mirror $\conj{\zeta_0}$ and mirror circle (dashed) in the
+  lower half-plane. The dipole direction is indicated by horizontal arrows
+  at each centre. Schematic streamlines (green) show how the dipole sum
+  simultaneously enforces $\psi = \mathrm{const}$ on
+  $\abs{\zeta - \zeta_0} = a$ and $\psi = 0$ on $\partial\HH$.}
+  \label{fig:mt-schematic}
+\end{figure}
+
 \paragraph{Approximation error.}
 When the actual obstacle boundary differs from a circle, approximating it by
 the minimum enclosing circle introduces a leading-order error that scales as
@@ -520,6 +539,28 @@ pre-computed and reused across iterations, so each evaluation is a single
 vectorised dot product. Levenberg--Marquardt update details are in
 Appendix~\ref{app:lm}.
 
+Figure~\ref{fig:prevertex-polygon} shows the recovered pre-vertex layout for
+the 11-vertex Boulder polygon alongside the polygon itself, with each
+$\zeta_k \leftrightarrow w_k$ pair colour-matched. The concentration of
+pre-vertices toward one side of the real axis directly visualises the
+crowding phenomenon of Section~\ref{sec:crowding}: vertices on the narrow
+western flank of the polygon share their pre-vertex region with several
+close neighbours.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/figC_prevertex_polygon.png}
+  \caption{\textbf{Pre-vertex $\zeta_k \leftrightarrow$ polygon vertex $w_k$
+  correspondence.} Matching colours identify each pair. Black squares in
+  panel (a) mark the three M\"obius-fixed anchors
+  $\zeta_0 = -1, \zeta_1 = 0, \zeta_{n-1} = 1$; the eight filled circles
+  are free pre-vertices recovered by the solver. Panel (b) gives each
+  vertex with its interior angle $\alpha_k \pi$. Clustering of pre-vertices
+  near $\zeta = 0$ reflects the asymmetric edge-length distribution of the
+  simplified Boulder boundary.}
+  \label{fig:prevertex-polygon}
+\end{figure}
+
 \paragraph{Determining $A$ and $C$.}
 Once the pre-vertices are known, $A, C \in \CC$ are obtained from the
 overdetermined linear system $A + C \cdot I_k = w_k$ for
@@ -534,17 +575,32 @@ solution is computed via \texttt{numpy.linalg.lstsq}.
 All flow results are produced via the \emph{forward-map} approach. A dense
 $400 \times 400$ grid of $\zeta$ values in $\HH$ is mapped forward to
 $z = f(\zeta)$, each SC integral evaluated by a $400$-node Gauss--Legendre
-rule along an L-shaped path in $\HH$ that clears the real-axis branch cuts.
-The complex potential $W(\zeta)$ is evaluated analytically at each $\zeta$
-point. The resulting scattered pairs $(z_i, W(\zeta_i))$ are interpolated
-onto a regular physical-plane grid (\texttt{scipy.interpolate.griddata},
-linear method), and contours of $\Imag W$ (streamlines) and $\Real W$
-(equipotentials) are extracted.
+rule along an L-shaped path in $\HH$ that clears the real-axis branch cuts
+(Figure~\ref{fig:branch-path}). The complex potential $W(\zeta)$ is evaluated
+analytically at each $\zeta$ point. The resulting scattered pairs
+$(z_i, W(\zeta_i))$ are interpolated onto a regular physical-plane grid
+(\texttt{scipy.interpolate.griddata}, linear method), and contours of
+$\Imag W$ (streamlines) and $\Real W$ (equipotentials) are extracted.
 
 This avoids the per-pixel Newton iteration that inverse mapping would require.
 Grid points from $\HH$ land strictly inside $\Omega$ by construction, so the
 interpolated field is zero outside $\Omega$ with smooth contours at the
 boundary.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.78\textwidth]{figures/figG_branch_cut_path.png}
+  \caption{\textbf{L-shaped integration path used in the forward SC map.}
+  Red markers on the real axis are the pre-vertices $\zeta_k$; short red
+  segments below $\RR$ indicate the branch cuts of the integrand
+  $\prod_k (t - \zeta_k)^{\alpha_k - 1}$. The blue square is the reference
+  point $\zeta_{\mathrm{ref}} = 0.5i$; the green star is a target $\zeta$
+  in $\HH$. The path is taken horizontally within $\HH$ to the target's
+  real part, then vertically to the target, keeping distance from the
+  real-axis branch points and preserving the chosen branch of the SC
+  integrand.}
+  \label{fig:branch-path}
+\end{figure}
 
 \subsection{Verification on the Rectangle Map}
 \label{sec:verify}
@@ -698,6 +754,30 @@ of the Cauchy--Riemann equations~\eqref{eq:CR} wherever $f'(\zeta) \neq 0$.
   \label{fig:uniform}
 \end{figure}
 
+\paragraph{Geometric view of the SC map.}
+Figure~\ref{fig:conformal-grid} shows the conformal grid from a purely
+geometric angle: a rectangular mesh in $\HH$ (horizontal lines
+$\Imag\,\zeta = \eta_0$ in blue and vertical lines $\Real\,\zeta = \xi_0$
+in orange) pushed forward through $f$ into $\Omega$. Unlike
+Figure~\ref{fig:uniform}, no flow interpretation is attached; the figure
+shows only how $f$ deforms straight lines in $\HH$ into smooth curves that
+meet at 90\textdegree{} throughout the polygon interior. This is the
+signature geometric visualisation of a conformal map.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.68\textwidth]{figures/figD_conformal_grid.png}
+  \caption{\textbf{Forward image of a rectangular grid in $\mathbb{H}$
+  under the SC map $f$.} Blue curves are images of horizontal lines
+  $\Imag\,\zeta = \eta_0$ for $\eta_0 \in [0.03, 1.8]$; orange curves are
+  images of vertical lines $\Real\,\zeta = \xi_0$ for
+  $\xi_0 \in [-2.4, 2.4]$. The two families remain orthogonal throughout
+  $\Omega$, confirming conformality of $f$. Compare with
+  Figure~\ref{fig:uniform}(b), which shows the same grid labelled as flow
+  streamlines and equipotentials.}
+  \label{fig:conformal-grid}
+\end{figure}
+
 \subsection{Doubly-Connected Flow with an Urban Obstacle}
 \label{sec:res-urban}
 
@@ -724,6 +804,29 @@ visibly around the purple obstacle, with local acceleration on its flanks.
   around the obstacle, with a local acceleration on its flanks. Same grid
   resolution and contour counts as Figure~\ref{fig:uniform}.}
   \label{fig:urban}
+\end{figure}
+
+\paragraph{Velocity magnitude.}
+Figure~\ref{fig:speed} shows $|W'(z)|$ for both flow models as heatmaps.
+In the uniform case, the speed peaks at the polygon vertices (the SC map
+has $f'(\zeta_k) = 0$ singularities, so
+$|W'(z)| = U/|f'(\zeta)| \to \infty$ as $z \to w_k$), giving the expected
+corner-acceleration signature. In the urban-obstacle case, the dipole term
+additionally compresses the flow on the flanks of the downtown core,
+producing two localised acceleration regions north and south of the
+obstacle that the streamline figure only hints at qualitatively.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/figF_velocity_heatmap.png}
+  \caption{\textbf{Velocity magnitude $|W'(z)| = |W'(\zeta)/f'(\zeta)|$ for
+  the two flow models.} (a) Uniform flow: speed rises sharply near
+  polygon vertices where $f'(\zeta_k) \to 0$. (b) Urban-obstacle
+  potential: two additional bright regions on the flanks of the downtown
+  core quantify the ``local acceleration'' visible in
+  Figure~\ref{fig:urban}. Colour bar clipped to the 5th--95th percentile
+  to suppress the finite-grid blow-up at vertex branch points.}
+  \label{fig:speed}
 \end{figure}
 
 \paragraph{Remark on modularity.}
