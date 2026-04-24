@@ -17,6 +17,7 @@ from src.polygon import (
     complex_to_polygon,
     ensure_ccw,
     smooth_extreme_angles,
+    find_best_rotation,
 )
 from src.angles import interior_angles_pi, verify_angle_sum, sc_exponents
 from src.sc_solver import solve_parameters, sc_map, SCParameters
@@ -91,6 +92,11 @@ def run_pipeline(
     z_poly, center, scale = polygon_to_complex(simplified_utm, normalise=True)
     z_poly = ensure_ccw(z_poly)
     z_poly = smooth_extreme_angles(z_poly, alpha_min=0.35, alpha_max=1.75, min_vertices=10)
+
+    # Rotate to minimise SC pre-vertex crowding
+    roll = find_best_rotation(z_poly)
+    z_poly = np.roll(z_poly, -roll)
+
     n = len(z_poly)
     logger.info("Polygon: %d vertices  (center=%.1f%+.1fj, scale=%.1f)",
                 n, center.real, center.imag, scale)

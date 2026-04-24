@@ -103,6 +103,48 @@ def ensure_ccw(z_poly: np.ndarray) -> np.ndarray:
     return z_poly
 
 
+def find_best_rotation(z_poly: np.ndarray) -> int:
+    """Return the cyclic rotation index that best conditions the SC solver.
+
+    With the Möbius normalisation fixed_vals = {0: -1, 1: 0, n-1: 1}, the
+    LM residuals are `computed_side_lengths[0:n-1] / computed_side_lengths[n-1]`.
+    The denominator is the "outer arc" side: target_sides[(roll-1) % n].
+    When this denominator is tiny, ratios blow up to O(100) and the solver
+    becomes ill-conditioned.
+
+    Primary criterion: maximise the outer-arc (normalization) denominator so
+    that all target_ratios stay ≤ 1, keeping the LM landscape well-scaled.
+    Tiebreak: maximise the minimum predicted pre-vertex gap in (0, 1) to
+    reduce SC crowding.
+    """
+    n = len(z_poly)
+    sides = np.abs(np.diff(np.append(z_poly, z_poly[0])))
+
+    best_roll = 0
+    best_norm  = -1.0
+    best_gap   = -1.0
+
+    for roll in range(n):
+        norm_denom = float(sides[(roll - 1) % n])
+        free_sides = np.array([sides[(roll + k) % n] for k in range(1, n - 1)])
+        total = float(free_sides.sum())
+        min_gap = float(free_sides.min() / total) if total > 1e-14 else 0.0
+
+        # Lexicographic: prefer larger normalization, then larger min_gap
+        if (norm_denom > best_norm + 1e-9 or
+                (abs(norm_denom - best_norm) < 1e-9 and min_gap > best_gap)):
+            best_norm  = norm_denom
+            best_gap   = min_gap
+            best_roll  = roll
+
+    logger.info(
+        "Best polygon rotation: roll=%d, outer-arc side=%.4f, "
+        "predicted min pre-vertex gap=%.4f",
+        best_roll, best_norm, best_gap,
+    )
+    return best_roll
+
+
 def smooth_extreme_angles(
     z_poly: np.ndarray,
     alpha_min: float = 0.15,

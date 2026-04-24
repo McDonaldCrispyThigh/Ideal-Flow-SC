@@ -85,7 +85,6 @@ def solve_parameters(
     alphas: np.ndarray,
     *,
     maxiter: int = 2000,
-    tol: float = 1e-10,
 ) -> SCParameters:
     n = len(z_poly)
     betas = alphas - 1.0
@@ -125,23 +124,25 @@ def solve_parameters(
         result = optimize.least_squares(
             _residuals, x0,
             method="lm",
-            max_nfev=maxiter * 100,
-            ftol=tol, xtol=tol, gtol=tol,
+            max_nfev=max(5000, maxiter * 10),
+            ftol=1e-8, xtol=1e-8, gtol=1e-8,
         )
         logger.info("SC solver initial run: cost=%.2e", result.cost)
 
         best_result = result
-        for restart in range(5):
+        noise_scales = [0.1, 0.3, 0.5, 0.8, 1.2, 1.8, 2.5]
+        for restart, sigma in enumerate(noise_scales):
             if best_result.cost < 1e-4:
                 break
-            noise = np.random.randn(len(x0)) * 0.3
+            noise = np.random.randn(len(x0)) * sigma
             r2 = optimize.least_squares(
-                _residuals, best_result.x + noise,
+                _residuals, x0 + noise,
                 method="lm",
-                max_nfev=maxiter * 50,
-                ftol=tol, xtol=tol, gtol=tol,
+                max_nfev=max(3000, maxiter * 5),
+                ftol=1e-8, xtol=1e-8, gtol=1e-8,
             )
-            logger.info("SC solver restart %d: cost=%.2e", restart + 1, r2.cost)
+            logger.info("SC solver restart %d (σ=%.1f): cost=%.2e",
+                        restart + 1, sigma, r2.cost)
             if r2.cost < best_result.cost:
                 best_result = r2
         result = best_result

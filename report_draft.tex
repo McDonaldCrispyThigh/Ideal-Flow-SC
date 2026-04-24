@@ -913,9 +913,13 @@ near a good solution); when $\lambda_t \to \infty$ it reduces to a small
 gradient-descent step (stable near ill-conditioned regions). The damping is
 increased whenever a proposed step fails to reduce $\|r\|_2$ and decreased
 on successful steps. For the Boulder County $12$-vertex problem the solver reduces the
-LM cost to $\approx 1.1 \times 10^{-2}$ after five restart passes,
-reflecting mild crowding of six pre-vertices into the interval
-$[0.688, 0.700]$ on the real axis.
+LM cost to $\approx 5.4 \times 10^{-2}$ after seven restart passes.
+An optimal cyclic rotation of the vertex ordering (roll~$=5$) is applied
+before the solve to place the longest polygon side as the outer-arc normalisation
+term, keeping all target side-length ratios below unity and reducing the
+maximum ratio from $\approx 31$ to $\approx 0.87$. The remaining cost
+reflects mild crowding of four free pre-vertices into two sub-intervals
+of width $\approx 0.02$ near $\zeta \approx 0.44$ and $\zeta \approx 0.76$.
 
 \section{Code and Reproducibility}
 \label{app:code}

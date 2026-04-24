@@ -21,6 +21,23 @@ logger = logging.getLogger(__name__)
 PotentialFn = Callable[[complex], complex]
 
 
+def _prevertex_adapted_x(
+    zk: np.ndarray,
+    n_per_gap: int = 12,
+    outer_n: int = 20,
+) -> np.ndarray:
+    """Return an x array with dense samples inside every pre-vertex gap."""
+    segments = []
+    for i in range(len(zk) - 1):
+        lo, hi = float(zk[i]), float(zk[i + 1])
+        gap = hi - lo
+        n = max(n_per_gap, int(n_per_gap * gap / max((float(zk[-1]) - float(zk[0])), 1e-9) * len(zk)))
+        segments.append(np.linspace(lo + 1e-7, hi - 1e-7, n))
+    outer_l = np.linspace(-6.0, float(zk[0]) - 0.01, outer_n)
+    outer_r = np.linspace(float(zk[-1]) + 0.01, 6.0, outer_n)
+    return np.unique(np.concatenate([outer_l, *segments, outer_r]))
+
+
 def compute_curves_forward(
     params: SCParameters,
     norm_polygon: Polygon,
@@ -37,10 +54,8 @@ def compute_curves_forward(
         potential_fn = lambda zeta: uniform_potential(zeta, U)
 
     prep_poly = prep(norm_polygon)
-    t_inner = np.linspace(-4.0, 4.0, n_pts_per_curve * 3 // 4)
-    t_outer = np.concatenate([np.linspace(-20.0, -4.0, n_pts_per_curve // 8),
-                               np.linspace(4.0,  20.0, n_pts_per_curve // 8)])
-    t_vals = np.unique(np.concatenate([t_outer, t_inner]))
+    # Pre-vertex-adapted t-values so crowded pre-vertex gaps get enough samples
+    t_vals = _prevertex_adapted_x(params.zk, n_per_gap=16, outer_n=30)
 
     y_near = np.logspace(-1.4, -0.5, n_stream // 2)
     y_far  = np.logspace(-0.4,  0.8, n_stream - n_stream // 2)
@@ -143,12 +158,12 @@ def compute_flow_grid(
         from .terrain import uniform_potential
         potential_fn = lambda zeta: uniform_potential(zeta, U)
 
-    x_zeta = np.linspace(-1.8, 1.8, n_zeta)
-    y_zeta = np.logspace(-1.5, 0.7, n_zeta // 2)
+    x_zeta = _prevertex_adapted_x(params.zk, n_per_gap=10, outer_n=16)
+    y_zeta = np.logspace(-1.5, 0.7, max(n_zeta // 2, 60))
     X_zeta, Y_zeta = np.meshgrid(x_zeta, y_zeta)
     zeta_flat = (X_zeta + 1j * Y_zeta).ravel()
 
-    logger.info("Forward SC map: evaluating %d ζ points …", len(zeta_flat))
+    logger.info("Forward SC map: evaluating %d ζ points (adapted grid) …", len(zeta_flat))
     z_flat = sc_map(zeta_flat, params, n_pts=250)
 
     W_flat = np.array([potential_fn(z) for z in zeta_flat], dtype=complex)
@@ -217,8 +232,8 @@ def compute_flow_grid_urban(
     else:
         potential_fn = lambda zeta: urban_potential(zeta, U, obstacle)
 
-    x_zeta = np.linspace(-1.8, 1.8, n_zeta)
-    y_zeta = np.logspace(-1.5, 0.7, n_zeta // 2)
+    x_zeta = _prevertex_adapted_x(params.zk, n_per_gap=10, outer_n=16)
+    y_zeta = np.logspace(-1.5, 0.7, max(n_zeta // 2, 60))
     X_zeta, Y_zeta = np.meshgrid(x_zeta, y_zeta)
     zeta_flat = (X_zeta + 1j * Y_zeta).ravel()
 

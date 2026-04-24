@@ -18,6 +18,7 @@ from src.polygon import (
     polygon_to_complex,
     ensure_ccw,
     smooth_extreme_angles,
+    find_best_rotation,
 )
 from src.angles import interior_angles_pi, sc_exponents
 from src.sc_solver import solve_parameters
@@ -47,6 +48,10 @@ def main():
         z_poly_raw, alpha_min=0.35, alpha_max=1.75, min_vertices=10
     )
     logger.info("Simplified polygon: %d vertices", len(z_poly_norm))
+
+    # Rotate vertices to minimise SC pre-vertex crowding
+    roll = find_best_rotation(z_poly_norm)
+    z_poly_norm = np.roll(z_poly_norm, -roll)
 
     alphas = interior_angles_pi(z_poly_norm)
     betas = sc_exponents(alphas)

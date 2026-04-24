@@ -58,7 +58,7 @@ found by Levenberg-Marquardt nonlinear least-squares matching edge-length ratios
 | Parameterisation | Softmax reparameterisation, $\zeta_k \in (0,1)$; ordering and box constraints are automatic |
 | Quadrature | $N = 500$-node Gauss-Legendre; convergence rate $O(N^{-1})$ at branch-point endpoints |
 | Pre-vertex accuracy | $\sim 10^{-4}$ (set by plain GL at $(t-\zeta_k)^{-1/2}$ singularities) |
-| LM residual (Boulder County 12-vertex) | $\|r\|_2 \approx 1.1 \times 10^{-2}$ |
+| LM residual (Boulder County 12-vertex) | $\|r\|_2 \approx 5.4 \times 10^{-2}$ (optimal vertex rotation applied) |
 | Verification (rectangle, $m(R)=2$) | exact $s = 2\sqrt{2}/3 \approx 0.94281$; recovered $0.94296$; error $1.5\times 10^{-4}$ |
 
 ---
@@ -126,7 +126,7 @@ python main.py --shapefile data/raw/tl_2025_08_county --urban --grid 80
 | Raw polygon | TIGER/Line vertices | 2752 |
 | Douglas-Peucker simplification | Adaptive tolerance | ~14 vertices |
 | Extreme-angle removal | $\alpha \notin [0.35\pi,\, 1.75\pi]$ dropped | 12 vertices |
-| SC parameter solve | LM residual $\|r\|_2$ | $\approx 1.1\times10^{-2}$ |
+| SC parameter solve | LM residual $\|r\|_2$ (optimal rotation) | $\approx 5.4\times10^{-2}$ |
 | Urban obstacle | Hardcoded downtown Boulder polygon | $9.2\ \mathrm{km}^2$ commercial core |
 | Circle separation | $\mathrm{Im}(\zeta_0)/a$ | 3.96 |
 
