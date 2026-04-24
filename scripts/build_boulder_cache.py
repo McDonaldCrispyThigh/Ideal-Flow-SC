@@ -31,7 +31,7 @@ logger = logging.getLogger("build_cache")
 
 
 def main():
-    shp = os.path.join(PROJECT_ROOT, "data", "raw", "tl_2025_08_place")
+    shp = os.path.join(PROJECT_ROOT, "data", "raw", "tl_2025_08_county")
     out_path = os.path.join(PROJECT_ROOT, "scripts", "boulder_cache.pkl")
 
     logger.info("Loading Boulder polygon from %s", shp)

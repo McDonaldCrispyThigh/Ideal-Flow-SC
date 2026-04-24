@@ -62,8 +62,8 @@
 
 \begin{abstract}
 This paper applies the Schwarz--Christoffel (SC) conformal mapping to simulate
-steady, irrotational, incompressible ideal fluid flow inside an 11-vertex
-simplification of the Boulder, Colorado city-boundary polygon. The SC
+steady, irrotational, incompressible ideal fluid flow inside a 12-vertex
+simplification of the Boulder County, Colorado boundary polygon. The SC
 transformation maps the upper half-plane $\HH$ conformally onto the polygonal
 domain $\Omega$, converting analytically tractable complex potentials in $\HH$
 into streamline and equipotential patterns in the physical domain. Two flow
@@ -101,8 +101,8 @@ closed form; for general $n$-gons it must be treated numerically. The modern
 numerical theory was systematised by Driscoll and Trefethen~\citep{DT09}; the
 classical theory is in Nehari~\citep{Nehari52} and Ahlfors~\citep{Ahlfors79}.
 
-We apply the SC transformation to an 11-vertex polygon derived from the
-Boulder, Colorado city boundary, chosen for its mix of convex and reflex
+We apply the SC transformation to a 12-vertex polygon derived from the
+Boulder County, Colorado boundary, chosen for its mix of convex and reflex
 vertices as a non-trivial test of the numerical pipeline. Two flow regimes
 are considered: (i)~uniform ideal flow, providing the baseline conformal grid,
 and (ii)~doubly-connected flow with an interior obstacle modelled via the
@@ -293,7 +293,7 @@ of generality. We use
   \label{eq:normalisation}
 \end{equation}
 leaving $n - 3$ free parameters $\zeta_2 < \cdots < \zeta_{n-2}$ in $(0, 1)$.
-For Boulder, $n = 11$ yields $n - 3 = 8$ free pre-vertices. These are
+For Boulder County, $n = 12$ yields $n - 3 = 9$ free pre-vertices. These are
 determined by matching side-length ratios; see Section~\ref{sec:param}.
 
 \subsection{Method of Images}
@@ -464,8 +464,8 @@ family of rectangles of varying aspect ratio. The spacing drops below
 $10^{-4}$ at $L \approx 4$ and below $10^{-8}$ at $L \approx 7$; beyond
 $L \gtrsim 10$ the spacing approaches double precision and the parameter
 problem becomes ill-posed. This limits SC solvers to $n \lesssim 20$ vertices
-with mild aspect ratios, and is the reason the 1935-vertex Boulder boundary
-must be simplified to an 11-vertex polygon (Section~\ref{sec:preprocess}).
+with mild aspect ratios, and is the reason the 2752-vertex Boulder County boundary
+must be simplified to a 12-vertex polygon (Section~\ref{sec:preprocess}).
 The chosen simplification has all interior angles confined to
 $[0.35\pi, 1.75\pi]$, keeping the conformal modulus of each sub-region within
 the stable regime.
@@ -494,11 +494,11 @@ the stable regime.
 \subsection{Polygon Preprocessing}
 \label{sec:preprocess}
 
-The raw Boulder TIGER/Line boundary~\citep{TIGER25} has 1935 vertices.
+The raw Boulder County TIGER/Line boundary~\citep{TIGER25} has 2752 vertices.
 Douglas--Peucker simplification with an adaptive binary-search tolerance
-reduces it to 14 vertices; three vertices with reflex angles exceeding
-$1.75\pi$ are then removed iteratively by merging adjacent edges, yielding the
-final $n = 11$ polygon. The polygon is normalised to $O(1)$ scale and centred
+reduces it to 14 vertices; two vertices with excessively acute angles below
+$0.35\pi$ are then removed iteratively by merging adjacent edges, yielding the
+final $n = 12$ polygon. The polygon is normalised to $O(1)$ scale and centred
 at the origin for numerical stability. The angle bounds $[0.35\pi, 1.75\pi]$
 are chosen from the crowding discussion of Section~\ref{sec:crowding}.
 
@@ -543,7 +543,7 @@ vectorised dot product. Levenberg--Marquardt update details are in
 Appendix~\ref{app:lm}.
 
 Figure~\ref{fig:prevertex-polygon} shows the recovered pre-vertex layout for
-the 11-vertex Boulder polygon alongside the polygon itself, with each
+the 12-vertex Boulder County polygon alongside the polygon itself, with each
 $\zeta_k \leftrightarrow w_k$ pair colour-matched. The concentration of
 pre-vertices toward one side of the real axis directly visualises the
 crowding phenomenon of Section~\ref{sec:crowding}: vertices on the narrow
@@ -698,8 +698,8 @@ convergence history.
 
 \subsection{Polygon Simplification}
 
-Figure~\ref{fig:poly} shows the original 1935-vertex TIGER/Line boundary of
-Boulder alongside the 11-vertex polygon used in the SC computation.
+Figure~\ref{fig:poly} shows the original 2752-vertex TIGER/Line boundary of
+Boulder County alongside the 12-vertex polygon used in the SC computation.
 Douglas--Peucker removes fine-scale boundary undulations; the interior-angle
 filter then enforces $\alpha_k \in [0.35\pi, 1.75\pi]$. The aspect ratio and
 dominant geometric features are faithfully preserved.
@@ -708,8 +708,8 @@ dominant geometric features are faithfully preserved.
   \centering
   \includegraphics[width=0.80\textwidth]{figures/fig1_polygon_comparison.png}
   \caption{\textbf{Boulder boundary before and after SC preprocessing.}
-  Left: original 1935-vertex TIGER/Line polygon~\citep{TIGER25}.
-  Right: 11-vertex simplification after Douglas--Peucker reduction and
+  Left: original 2752-vertex TIGER/Line polygon~\citep{TIGER25}.
+  Right: 12-vertex simplification after Douglas--Peucker reduction and
   iterative angle filtering with bounds $\alpha_k \in [0.35\pi, 1.75\pi]$.
   The simplified polygon is the domain $\Omega$ for all subsequent
   SC computations.}
@@ -751,7 +751,7 @@ of the Cauchy--Riemann equations~\eqref{eq:CR} wherever $f'(\zeta) \neq 0$.
     \includegraphics[width=\textwidth]{figures/fig4_combined.png}
     \caption{Conformal grid (streamlines + equipotentials).}
   \end{subfigure}
-  \caption{\textbf{Uniform flow $W = U\zeta$ in the 11-vertex Boulder
+  \caption{\textbf{Uniform flow $W = U\zeta$ in the 12-vertex Boulder County
   polygon $\Omega$.} Streamlines are the forward images of horizontal lines
   $\Imag \zeta = \eta_0$ in $\HH$; equipotentials are images of
   $\Real \zeta = \xi_0$. The SC map $f : \HH \to \Omega$ preserves angles
@@ -871,8 +871,8 @@ $\Omega$.
 A practical obstruction identified in Section~\ref{sec:crowding} is
 \emph{SC crowding}: the pre-vertex spacing across a long region of aspect
 ratio $L$ contracts exponentially in $L$, a rigid conformal invariant tied
-to the modulus of the region. This forces the 1935-vertex Boulder boundary
-to be simplified to 11 vertices before any SC computation is feasible.
+to the modulus of the region. This forces the 2752-vertex Boulder County boundary
+to be simplified to 12 vertices before any SC computation is feasible.
 
 \paragraph{Future directions.}
 Two extensions are natural.
@@ -911,9 +911,10 @@ the update reduces to the Gauss--Newton step (fast second-order convergence
 near a good solution); when $\lambda_t \to \infty$ it reduces to a small
 gradient-descent step (stable near ill-conditioned regions). The damping is
 increased whenever a proposed step fails to reduce $\|r\|_2$ and decreased
-on successful steps. For the Boulder $11$-vertex problem the solver converges
-in approximately $1.8 \times 10^4$ function evaluations to a residual
-$\|r\|_2 \approx 6 \times 10^{-4}$.
+on successful steps. For the Boulder County $12$-vertex problem the solver reduces the
+LM cost to $\approx 1.1 \times 10^{-2}$ after five restart passes,
+reflecting mild crowding of six pre-vertices into the interval
+$[0.688, 0.700]$ on the real axis.
 
 \section{Code and Reproducibility}
 \label{app:code}
@@ -923,7 +924,7 @@ repository\footnote{\url{https://github.com/McDonaldCrispyThigh/Ideal-Flow-SC}}.
 The two-model pipeline is reproduced by:
 \begin{verbatim}
   pip install -r requirements.txt
-  python main.py --shapefile data/raw/tl_2025_08_place --urban --grid 80
+  python main.py --shapefile data/raw/tl_2025_08_county --urban --grid 80
 \end{verbatim}
 Key modules: \texttt{src/polygon.py} (boundary preprocessing),
 \texttt{src/angles.py} (interior-angle computation),

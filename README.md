@@ -9,7 +9,7 @@ University of Colorado Boulder, Department of Applied Mathematics
 ## Overview
 
 This project applies the **Schwarz-Christoffel (SC) conformal mapping** to simulate
-ideal incompressible fluid flow inside the Boulder, Colorado city boundary polygon, with
+ideal incompressible fluid flow inside the Boulder County, Colorado boundary polygon, with
 the additional physical constraint that the velocity field is irrotational and the flow
 is in steady state. Two flow models are derived and visualised, each confirmed against a
 closed-form benchmark:
@@ -19,7 +19,7 @@ closed-form benchmark:
 | Uniform flow | $U\zeta$ | Ideal parallel flow; baseline conformal grid |
 | Urban obstacle | $U\zeta + \dfrac{Ua^2}{\zeta - \zeta_0} + \dfrac{Ua^2}{\zeta - \bar\zeta_0}$ | Milne-Thomson circle-theorem obstacle |
 
-The SC map $f : \mathbb{H} \to \Omega$ sends the upper half-plane to the Boulder polygon,
+The SC map $f : \mathbb{H} \to \Omega$ sends the upper half-plane to the Boulder County polygon,
 converting analytically tractable complex potentials in $\mathbb{H}$ into streamlines and
 equipotentials in the physical domain. All results use the **forward-map** approach: a
 dense grid in $\mathbb{H}$ is pushed through $f$, avoiding per-pixel Newton iteration.
@@ -58,7 +58,7 @@ found by Levenberg-Marquardt nonlinear least-squares matching edge-length ratios
 | Parameterisation | Softmax reparameterisation, $\zeta_k \in (0,1)$; ordering and box constraints are automatic |
 | Quadrature | $N = 500$-node Gauss-Legendre; convergence rate $O(N^{-1})$ at branch-point endpoints |
 | Pre-vertex accuracy | $\sim 10^{-4}$ (set by plain GL at $(t-\zeta_k)^{-1/2}$ singularities) |
-| LM residual (Boulder 11-vertex) | $\|r\|_2 \approx 6 \times 10^{-4}$ |
+| LM residual (Boulder County 12-vertex) | $\|r\|_2 \approx 1.1 \times 10^{-2}$ |
 | Verification (rectangle, $m(R)=2$) | exact $s = 2\sqrt{2}/3 \approx 0.94281$; recovered $0.94296$; error $1.5\times 10^{-4}$ |
 
 ---
@@ -118,15 +118,15 @@ python scripts/make_milne_thomson_schematic.py  # Fig E: Milne-Thomson schematic
 python scripts/make_branch_cut_schematic.py     # Fig G: branch-cut path
 
 # Full pipeline (uniform + urban obstacle)
-python main.py --shapefile data/raw/tl_2025_08_place --urban --grid 80
+python main.py --shapefile data/raw/tl_2025_08_county --urban --grid 80
 ```
 
 | Stage | Detail | Value |
 |-------|--------|-------|
-| Raw polygon | TIGER/Line vertices | 1935 |
+| Raw polygon | TIGER/Line vertices | 2752 |
 | Douglas-Peucker simplification | Adaptive tolerance | ~14 vertices |
-| Extreme-angle removal | $\alpha \notin [0.35\pi,\, 1.75\pi]$ dropped | 11 vertices |
-| SC parameter solve | LM residual $\|r\|_2$ | $\approx 6\times10^{-4}$ |
+| Extreme-angle removal | $\alpha \notin [0.35\pi,\, 1.75\pi]$ dropped | 12 vertices |
+| SC parameter solve | LM residual $\|r\|_2$ | $\approx 1.1\times10^{-2}$ |
 | Urban obstacle | OSM landuse data | $0.82\ \mathrm{km}^2$ commercial core |
 | Circle separation | $\mathrm{Im}(\zeta_0)/a$ | 5.36 |
 
@@ -210,7 +210,7 @@ extends downward from each $\zeta_k$ into the lower half-plane).
 
 | Figure | File | Description |
 |--------|------|-------------|
-| Fig 1 | `fig1_polygon_comparison.png` | Original 1935-vertex vs. 11-vertex simplified boundary |
+| Fig 1 | `fig1_polygon_comparison.png` | Original 2752-vertex vs. 12-vertex simplified boundary |
 | Fig 2 | `fig2_streamlines.png` | Streamlines $\psi = \mathrm{const}$ under $W = U\zeta$ |
 | Fig 3 | `fig3_equipotentials.png` | Equipotentials $\phi = \mathrm{const}$ |
 | Fig 4 | `fig4_combined.png` | Conformal grid (streamlines + equipotentials) |
