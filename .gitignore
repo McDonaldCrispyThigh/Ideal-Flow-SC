@@ -50,8 +50,7 @@ cache/
 
 # Submitted course documents (not for public repo)
 APPM4360_Abstract_Submission.docx
-APPM4360_Team_Guide.docx
-APPM4360_Team_Guide.pdf
+*Team_Guide*
 
 # Stale generated figures (not referenced in report)
 figures/fig8_urban_vs_uniform.*
