@@ -57,7 +57,7 @@ def plot_polygon_comparison(
         ax.set_title(title, fontsize=12)
         ax.tick_params(labelsize=8)
 
-    fig.suptitle("Boulder City Boundary - Original vs. Simplified",
+    fig.suptitle("Boulder County Boundary - Original vs. Simplified",
                  fontsize=14, fontweight="bold", y=0.98)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     if save:
@@ -484,7 +484,7 @@ def plot_four_way_comparison(
         ax.set_title(title, fontsize=10, fontweight="bold")
 
     fig.suptitle(
-        "Streamline Comparison - Boulder City Polygon\n"
+        "Streamline Comparison - Boulder County Polygon\n"
         "Schwarz-Christoffel Conformal Mapping: Progressive Physical Enhancements",
         fontsize=12, fontweight="bold", y=1.01,
     )
@@ -533,7 +533,7 @@ def plot_three_way_comparison(
         ax.set_title(title, fontsize=11, fontweight="bold")
 
     fig.suptitle(
-        "Streamline Comparison - Boulder City Polygon\n"
+        "Streamline Comparison - Boulder County Polygon\n"
         "Schwarz-Christoffel Conformal Mapping with Progressive Physical Enhancements",
         fontsize=13, fontweight="bold", y=1.01,
     )
