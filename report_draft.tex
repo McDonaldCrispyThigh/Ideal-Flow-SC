@@ -1,5 +1,8 @@
 \documentclass[11pt]{article}
 
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
 \usepackage[margin=1in, top=1.15in, bottom=1.15in]{geometry}
 
 \usepackage{amsmath, amssymb, amsthm}
@@ -98,8 +101,9 @@ formula for the conformal map from the upper half-plane $\HH$ to any simply
 connected polygon. For analytic polygons the parameter problem (choosing
 pre-images of the vertices on the real axis) can sometimes be solved in
 closed form; for general $n$-gons it must be treated numerically. The modern
-numerical theory was systematised by Driscoll and Trefethen~\citep{DT09}; the
-classical theory is in Nehari~\citep{Nehari52} and Ahlfors~\citep{Ahlfors79}.
+numerical theory was systematised by Driscoll and Trefethen~\citep{DT02}; the
+classical theory is in Nehari~\citep{Nehari52}, Ahlfors~\citep{Ahlfors79},
+and Walker~\citep{Walker64}.
 
 We apply the SC transformation to a 12-vertex polygon derived from the
 Boulder County, Colorado boundary, chosen for its mix of convex and reflex
@@ -109,7 +113,7 @@ and (ii)~doubly-connected flow with an interior obstacle modelled via the
 Milne-Thomson circle theorem. The polygon's geometric complexity exercises
 the full pipeline; any physical interpretation as "airflow over a city" is
 illustrative. The mathematical framework is drawn from
-\citet{AF03,DT09,Nehari52}; the fluid-dynamics background from \citet{BO99}
+\citet{AF03,DT02,Nehari52}; the fluid-dynamics background from \citet{BO99}
 and \citet{MT68}.
 
 A closed-form verification against the rectangle-to-half-plane map (an
@@ -201,7 +205,7 @@ bijective conformal map $f : \HH \to \Omega$, unique up to post-composition
 with a real M\"obius transformation of $\HH$.
 \end{theorem}
 
-The Boulder polygon is simply connected, so $f$ exists. The three real
+A proof is in~\citet[Ch.~6]{Ahlfors79}. The Boulder polygon is simply connected, so $f$ exists. The three real
 parameters of the M\"obius freedom correspond to fixing three real pre-images
 on $\partial \HH = \RR \cup \{\infty\}$.
 
@@ -210,7 +214,7 @@ on $\partial \HH = \RR \cup \{\infty\}$.
 
 For a polygon $\Omega$ with vertices $w_1, \dots, w_n$ (counter-clockwise) and
 interior angles $\alpha_k \pi$, $\alpha_k \in (0, 2)$, the SC map takes the
-form~\citep[Ch.~5]{Nehari52}\citep[Ch.~5]{DT09}
+form~\citep[Ch.~V, \S6]{Nehari52}\citep[Ch.~6, \S2.2]{Ahlfors79}\citep[Ch.~2]{DT02}
 \begin{equation}
   f(\zeta) = A + C \int_{\zeta_0}^{\zeta}
     \prod_{k=1}^{n} (t - \zeta_k)^{\alpha_k - 1} \dif t,
@@ -312,11 +316,11 @@ For a source of strength $Q > 0$ the image-pair potential is
 
 \paragraph{Algebraic verification.}
 Take $\zeta = x \in \RR$:
-\begin{align}
+\begin{align*}
   \log(x - s) + \log(x - \bar{s})
   &= \log\!\bigl[(x - a)^2 + b^2\bigr]
      + i\,\bigl[\arg(x - a - ib) + \arg(x - a + ib)\bigr].
-\end{align}
+\end{align*}
 The numbers $x - a - ib$ and $x - a + ib$ are complex conjugates, so their
 arguments are opposite in sign, making the bracketed imaginary part vanish.
 Therefore
@@ -372,7 +376,7 @@ of $D$, equivalently an anti-holomorphic function of $\zeta$. Taking the
 complex conjugate of the entire expression, $\conj{W_0(\iota(\zeta))}$,
 converts this into a holomorphic function of $\zeta$ on
 $\CC \setminus \overline{D}$. This is the Schwarz reflection principle
-specialised to a circle \citep[Ch.~4.6]{Ahlfors79}. Consequently
+specialised to a circle \citep[Ch.~4, \S6.5]{Ahlfors79}. Consequently
 $W^{\mathrm{ext}} = W_0(\zeta) + \conj{W_0(\iota(\zeta))}$ is holomorphic in
 $\zeta$ outside $D$, and its singularities there are exactly those of $W_0$
 (those of $W_0 \circ \iota$ all lie inside $D$, where they are excluded by
@@ -424,7 +428,7 @@ far away.
 \paragraph{Approximation error.}
 When the actual obstacle boundary differs from a circle, approximating it by
 the minimum enclosing circle introduces a leading-order error that scales as
-$O\bigl((a/\Imag\,\zeta_0)^2\bigr)$~\citep[Ch.~6]{MT68}. This is an
+$O\bigl((a/\Imag\,\zeta_0)^2\bigr)$~\citep[\S6.21]{MT68}. This is an
 order-of-magnitude estimate rather than a rigorous bound. Direct verification
 against an exact doubly-connected SC map is noted in
 Section~\ref{sec:conclusions} as future work.
@@ -440,7 +444,7 @@ a rigid complex-analytic invariant.
 \paragraph{Conformal modulus of a rectangle.}
 Consider the rectangle $R = [-K, K] \times [0, K']$ of width $2K$ and height
 $K'$. Its \emph{conformal modulus} (aspect ratio) is
-$m(R) = 2K/K'$~\citep[Ch.~2]{DT09}, and it is a conformal invariant: no
+$m(R) = 2K/K'$~\citep[Ch.~2]{DT02}, and it is a conformal invariant: no
 conformal map sends $R$ to a rectangle of different modulus. The SC
 pre-vertices $\{-1/k, -1, 1, 1/k\}$ that map to the corners of $R$ are related
 to $m(R)$ through the complete elliptic integrals
@@ -462,7 +466,7 @@ $K(k)$~\citep[{\S}19.12]{NIST10} gives the inner pre-vertex spacing
 \paragraph{Consequence for general polygons.}
 For a general polygon containing a long thin region of aspect ratio $L$, the
 pre-vertex spacing across that region contracts exponentially in
-$L$~\citep[Ch.~2]{DT09}. Figure~\ref{fig:crowding} shows both the theoretical
+$L$~\citep[Ch.~2]{DT02}. Figure~\ref{fig:crowding} shows both the theoretical
 crowding curve and the pre-vertex spacings recovered by our SC solver on a
 family of rectangles of varying aspect ratio. The spacing drops below
 $10^{-4}$ at $L \approx 4$ and below $10^{-8}$ at $L \approx 7$; beyond
@@ -538,9 +542,9 @@ every $\zeta_k \in (0, 1)$. The ordering and box constraints are thus
 automatic, and the optimisation over $p \in \RR^{n-3}$ is unconstrained.
 
 \paragraph{Solver and quadrature.}
-System~\eqref{eq:param} is solved by Levenberg--Marquardt least squares via
+System~\eqref{eq:param} is solved by Levenberg--Marquardt least squares~\citep[Ch.~7]{SB02} via
 SciPy's \texttt{least\_squares} routine. Each side-length integral is
-evaluated by $N = 500$-node Gauss--Legendre quadrature on $[-1, 1]$ after
+evaluated by $N = 500$-node Gauss--Legendre quadrature~\citep[\S3.5(v)]{NIST10}\citep{DB08} on $[-1, 1]$ after
 affine rescaling to $[\zeta_k, \zeta_{k+1}]$; nodes and weights are
 pre-computed and reused across iterations, so each evaluation is a single
 vectorised dot product. Levenberg--Marquardt update details are in
@@ -617,7 +621,7 @@ boundary.
 
 Before applying the pipeline to Boulder, we verify it against the one
 polygonal case with a closed-form SC map: the rectangle. The classical
-construction~\citep[Ch.~5]{Nehari52} uses the symmetric pre-vertex set
+construction~\citep[Ch.~V, \S6]{Nehari52}\citep[Ch.~6, \S2.3]{Ahlfors79} uses the symmetric pre-vertex set
 $\{-1/k, -1, 1, 1/k\}$ with elliptic modulus $0 < k < 1$, giving
 \begin{equation}
   f(\zeta) = \int_0^\zeta
@@ -887,7 +891,7 @@ Two extensions are natural.
 \item \textbf{Exact doubly-connected SC map.} The Milne-Thomson
   approximation~\eqref{eq:urban} introduces a small but non-zero
   approximation error (see Section~\ref{sec:res-urban}). An exact
-  doubly-connected SC map~\citep[Ch.~5]{DT09}, implemented via the
+  doubly-connected SC map~\citep[Ch.~4, \S4.9]{DT02}, implemented via the
   Schottky double or a circular slit canonical region, would eliminate
   this approximation and give a rigorous treatment.
 
