@@ -1,3 +1,8 @@
+# Node
+node_modules/
+package-lock.json
+package.json
+
 # Virtual environments
 ComplexEnv/
 .venv/
@@ -47,6 +52,13 @@ cache/
 
 # PDF copies of submitted documents (binary, large)
 *.pdf
+
+# PowerPoint files (large binary, regenerable from SVG sources)
+*.pptx
+*.ppt
+
+# Slides build tool + generated output (local only)
+slides/
 
 # Submitted course documents (not for public repo)
 APPM4360_Abstract_Submission.docx

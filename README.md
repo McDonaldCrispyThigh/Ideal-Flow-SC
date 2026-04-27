@@ -1,8 +1,10 @@
 # Ideal Fluid Flow via the Schwarz-Christoffel Transformation
 
-**Complex Variables and Applications, Spring 2026**  
-Congyuan Zheng · Sophia Arany · Alexander Ingalls  
+**Complex Variables and Applications (APPM 4360), Spring 2026**  
+Congyuan Zheng · Sophia Arany  
 University of Colorado Boulder, Department of Applied Mathematics
+
+**Deliverables:** [Report](report_draft.tex) · [Slides (PPTX)](slides/ppt-master/projects/sc_flow_presentation_ppt169_20260426/exports/)
 
 ---
 
@@ -312,7 +314,7 @@ framework.
 
 ```
 .
-├── data/raw/                    TIGER/Line shapefile (Boulder, CO)
+├── data/raw/                    TIGER/Line shapefile (Boulder County, CO)
 ├── src/
 │   ├── polygon.py               Load, simplify, and smooth Boulder polygon
 │   ├── angles.py                Interior-angle computation and SC exponents
@@ -324,13 +326,22 @@ framework.
 │   ├── roads.py                 OSM road intersections to point vortices
 │   └── visualization.py         Figure generation
 ├── scripts/
-│   ├── build_boulder_cache.py   Run SC solver once and pickle result
+│   ├── build_boulder_cache.py       Run SC solver once, pickle result (~5 min)
 │   ├── make_verification_figure.py  Fig A: rectangle closed-form check
 │   ├── make_crowding_figure.py      Fig B: SC crowding vs. aspect ratio
 │   ├── make_boulder_figures.py      Figs C, D, F: prevertex/grid/velocity
 │   ├── make_milne_thomson_schematic.py  Fig E: image-construction schematic
-│   └── make_branch_cut_schematic.py     Fig G: L-shaped integration path
-├── figures/                     Generated output (PNG + PDF)
+│   ├── make_branch_cut_schematic.py     Fig G: L-shaped integration path
+│   └── regen_figures_from_cache.py  Regenerate all figures from cached solver
+├── figures/                     Generated output (PNG + PDF, figs A–G + 1–11)
+├── slides/ppt-master/           Presentation source (SVG → PPTX pipeline)
+│   └── projects/sc_flow_presentation_ppt169_20260426/
+│       ├── svg_output/          12 SVG slide sources with rendered LaTeX formulas
+│       ├── formulas/            matplotlib-mathtext formula PNGs (STIX font)
+│       ├── images/              Figure assets referenced by slides
+│       ├── notes/               Speaker notes (total.md)
+│       └── exports/             Final PPTX (native DrawingML + SVG-reference copy)
+├── report_draft.tex             LaTeX report source
 ├── main.py                      Full pipeline CLI
 ├── refs.bib                     BibTeX references
 └── requirements.txt
@@ -359,6 +370,29 @@ pip install -r requirements.txt
 | `--grid N` | 80 | Flow-grid resolution ($N \times N$) |
 | `--min-vertices` | 12 | Min vertices after Douglas-Peucker |
 | `--max-vertices` | 16 | Max vertices after Douglas-Peucker |
+
+---
+
+## Presentation
+
+A 12-slide PPTX deck accompanies the report (`slides/ppt-master/`).
+
+| Slide | Title | Speaker |
+|-------|-------|---------|
+| 1 | Cover | — |
+| 2 | From Polygon to Flow: The SC Approach | Sophia Arany |
+| 3 | Ideal Flow and the Complex Potential | Sophia Arany |
+| 4 | The Schwarz–Christoffel Formula | Sophia Arany |
+| 5 | Method of Images + Milne-Thomson | Sophia Arany |
+| 6 | Uniform Flow in the Boulder County Polygon | Sophia Arany |
+| 7 | SC Crowding | Congyuan Zheng |
+| 8 | Polygon Preprocessing | Congyuan Zheng |
+| 9 | Solving the Parameter Problem | Congyuan Zheng |
+| 10 | Levenberg–Marquardt Solver & Rectangle Verification | Congyuan Zheng |
+| 11 | Urban-Core Obstacle Flow | Congyuan Zheng |
+| 12 | Conclusions | — |
+
+All mathematical formulas are rendered via **matplotlib mathtext** (STIX font, 150 dpi) and embedded as PNG assets in the SVG sources. The PPTX is built with the [ppt-master](https://github.com/hugohe3/ppt-master) pipeline (native DrawingML shapes).
 
 ---
 
