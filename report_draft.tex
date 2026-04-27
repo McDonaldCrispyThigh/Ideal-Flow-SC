@@ -831,12 +831,14 @@ The two-model pipeline is reproduced by:
 Key modules: \texttt{src/polygon.py} (boundary preprocessing),
 \texttt{src/angles.py} (interior-angle computation),
 \texttt{src/sc\_solver.py} (SC parameter problem, Gauss--Legendre quadrature,
-forward map),
+raw SC integral),
+\texttt{src/flow.py} (forward-map streamlines, scattered interpolation onto
+physical-plane grid),
 \texttt{src/urban.py} (OSM obstacle, Welzl minimum enclosing circle),
 \texttt{src/sc\_solver\_dc.py} (doubly-connected potentials), and
 \texttt{src/visualization.py} (figure generation).
 
-\noindent\textbf{Software:} Python~3.14, NumPy~2.2, SciPy~1.15,
-Shapely~2.0, GeoPandas~1.0, OSMnx~2.0~\citep{BG17}, Matplotlib~3.10.
+\noindent\textbf{Software:} Python~3.14, NumPy~2.4, SciPy~1.17,
+Shapely~2.1, GeoPandas~1.1, OSMnx~2.1~\citep{BG17}, Matplotlib~3.10.
 
 \end{document}

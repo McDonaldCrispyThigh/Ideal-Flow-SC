@@ -65,7 +65,7 @@ def compute_curves_forward(
     logger.info("Computing %d forward-map streamlines …", n_stream)
     for y0 in y_levels:
         zeta_curve = t_vals + 1j * y0
-        z_curve = sc_map(zeta_curve, params, n_pts=200)
+        z_curve = sc_map(zeta_curve, params, n_pts=250)
         x_c, y_c = z_curve.real, z_curve.imag
         xs, ys = [], []
         for k in range(len(x_c) - 1):
@@ -90,7 +90,7 @@ def compute_curves_forward(
     logger.info("Computing %d forward-map equipotentials …", n_equip)
     for x0 in x0_levels:
         zeta_curve = x0 + 1j * y_vals
-        z_curve = sc_map(zeta_curve, params, n_pts=200)
+        z_curve = sc_map(zeta_curve, params, n_pts=250)
         x_c, y_c = z_curve.real, z_curve.imag
         xs, ys = [], []
         for k in range(len(x_c) - 1):
