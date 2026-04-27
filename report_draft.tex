@@ -747,6 +747,31 @@ ratio $L$ contracts exponentially in $L$, a rigid conformal invariant tied
 to the modulus of the region. This forces the 2752-vertex Boulder County boundary
 to be simplified to 12 vertices before any SC computation is feasible.
 
+\paragraph{Limitations and scope.}
+Three limitations bound the present pipeline. First, the Milne-Thomson
+approximation~\eqref{eq:urban} carries a leading-order error of
+$O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 6.4\%$ for the Boulder run
+(Section~\ref{sec:res-urban}). For qualitative streamline visualisation
+this is acceptable; for quantitative pressure or drag calculations it is
+not. Any application requiring rigorous force coefficients must replace
+the dipole approximation with an exact doubly-connected SC map, as noted
+in the first future direction below. Second, the exponential crowding
+described in Section~\ref{sec:crowding} caps the practical polygon
+complexity at $n \lesssim 20$ vertices. A Manhattan-scale urban boundary,
+with hundreds of geometrically distinct blocks, lies far outside this
+range. Treating such domains would require either domain decomposition
+into patches each amenable to a separate SC map, or a cross-ratio
+reformulation of the parameter problem along the lines of Driscoll and
+Trefethen~\citep[Ch.~4]{DT02} that reduces crowding sensitivity. Third,
+the forward-map interpolation used in Section~\ref{sec:forward} degrades
+near polygon vertices where $f'(\zeta_k) \to 0$. This is an intrinsic
+property of the SC branch-point structure, not a numerical artefact:
+the physical velocity $|W'(z)| = U/|f'(\zeta)|$ diverges at each corner,
+so a uniform interpolation grid cannot resolve the local field accurately.
+Any application requiring precise flow near corner singularities would
+need asymptotic local expansions rather than the griddata interpolation
+used here.
+
 \paragraph{Future directions.}
 Two extensions are natural.
 
