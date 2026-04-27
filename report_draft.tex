@@ -53,9 +53,6 @@
     University of Colorado Boulder\\[1em]
     \large Sophia Arany\\
     \small Dept.\ of Applied Mathematics,
-    University of Colorado Boulder\\[1em]
-    \large Alexander Ingalls\\
-    \small Dept.\ of Aerospace Engineering,
     University of Colorado Boulder\par}
   \vspace{2.5cm}
   {\normalsize APPM 4360, Complex Variables and Applications,
@@ -803,8 +800,8 @@ is mapped to $\HH$ via $f^{-1}$; its pre-image is enclosed by a minimum
 enclosing circle (Welzl's algorithm~\citep{Welzl91}) of radius $a$ centred at
 $\zeta_0 \in \HH$. The urban-obstacle potential~\eqref{eq:urban} then applies,
 with achieved separation ratio $\Imag(\zeta_0)/a \approx 3.96$ for the
-Boulder County run, giving an $O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 6.4\%$
-leading-order approximation error.
+Boulder County run, giving a leading-order term of size
+$O\bigl((a/\Imag\,\zeta_0)^2\bigr) \approx 6.4\%$.
 
 Figure~\ref{fig:urban} shows the result. The Milne-Thomson dipole at
 $\zeta_0$ enforces no-penetration on the enclosing circle; the image term
@@ -817,7 +814,7 @@ visibly around the purple obstacle, with local acceleration on its flanks.
   \caption{\textbf{Doubly-connected flow with urban-core obstacle via the
   Milne-Thomson circle theorem~\eqref{eq:urban}.} Downtown Boulder commercial
   core shown in purple. Separation ratio $\Imag(\zeta_0)/a \approx 3.96$;
-  order-of-magnitude approximation error $\sim 6.4\%$. Streamlines deflect
+  leading-order term of size $\approx 6.4\%$. Streamlines deflect
   around the obstacle, with a local acceleration on its flanks. Same grid
   resolution and contour counts as Figure~\ref{fig:uniform}.}
   \label{fig:urban}
