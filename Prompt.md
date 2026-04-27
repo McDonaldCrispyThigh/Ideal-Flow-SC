@@ -9,12 +9,12 @@
 1. **Computation explodes.** The SC integral has one term per vertex. Thousands of terms make every function evaluation extremely slow.
 2. **SC Crowding.** When many vertices are squeezed close together on the boundary, their pre-images on the real axis are forced into an impossibly tight cluster. The integrand becomes nearly singular and numerical integration breaks down.
 
-**The fix:** We simplify the boundary to just **11 vertices** using two steps:
+**The fix:** We simplify the boundary to just **12 vertices** using two steps:
 
 - **Douglas-Peucker algorithm**, a standard GIS tool that removes vertices whose removal changes the polygon shape by less than a tolerance. Think of it as "keep only the corners that matter."
 - **Interior-angle smoothing**: after Douglas-Peucker, some angles are still too sharp or too flat for the SC map to handle. We merge or adjust vertices until every interior angle stays within a safe range.
 
-The result is a polygon that still faithfully traces Boulder's west mountains, downtown core, and eastern plains, but with only 11 corners, small enough for the SC integrals to be fast and stable.
+The result is a polygon that still faithfully traces Boulder's west mountains, downtown core, and eastern plains, but with only 12 corners, small enough for the SC integrals to be fast and stable.
 
 ---
 
@@ -24,23 +24,23 @@ The result is a polygon that still faithfully traces Boulder's west mountains, d
 
 The SC map $f$ sends the upper half-plane $\mathbb{H}$ to the interior of a polygon. Under this map, the $n$ corners of the polygon correspond to $n$ special points on the real axis called **pre-vertices** $z_1 < z_2 < \cdots < z_n$.
 
-By convention, three of them are fixed to pin down the overall scaling and rotation (this is the 3-parameter freedom guaranteed by the Riemann Mapping Theorem). That leaves $n - 3 = 8$ **free pre-vertices** that we must find.
+By convention, three of them are fixed to pin down the overall scaling and rotation (this is the 3-parameter freedom guaranteed by the Riemann Mapping Theorem). That leaves $n - 3 = 9$ **free pre-vertices** that we must find.
 
 **Why does their placement matter?**
 
 The shape of the mapped polygon is completely determined by the spacing of the pre-vertices on the real axis. A wrong spacing produces a distorted outline instead of Boulder's true boundary.
 
-**Goal:** Find the 8 free pre-vertex positions so that the side-length ratios of the mapped polygon exactly match Boulder's true boundary ratios.
+**Goal:** Find the 9 free pre-vertex positions so that the side-length ratios of the mapped polygon exactly match Boulder's true boundary ratios.
 
 ---
 
 ### Softmax Parameterization
 
-The pre-vertices must satisfy a strict ordering constraint: $0 < z_1 < z_2 < \cdots < z_8 < 1$ (after fixing the three anchor points).
+The pre-vertices must satisfy a strict ordering constraint: $0 < z_1 < z_2 < \cdots < z_9 < 1$ (after fixing the three anchor points).
 
 Feeding a constrained parameter directly into an optimizer is awkward, since the optimizer might step outside the feasible region and crash. Instead, we use a **softmax reparameterization**:
 
-Given an unconstrained vector $p = (p_1, \ldots, p_8) \in \mathbb{R}^8$, we compute
+Given an unconstrained vector $p = (p_1, \ldots, p_9) \in \mathbb{R}^9$, we compute
 
 $$z_k = \sum_{j=1}^{k} \frac{e^{p_j}}{\displaystyle\sum_{i} e^{p_i} + 1}$$
 
@@ -54,18 +54,18 @@ $$z_k = \sum_{j=1}^{k} \frac{e^{p_j}}{\displaystyle\sum_{i} e^{p_i} + 1}$$
 
 **Why does this work?**
 
-Each softmax weight is positive, so the cumsum is strictly increasing, making ordering automatic. All weights sum to less than 1, so every $z_k$ stays inside $(0, 1)$, satisfying the box constraint automatically. The optimizer can roam freely over all of $\mathbb{R}^8$ with no projection or penalty needed.
+Each softmax weight is positive, so the cumsum is strictly increasing, making ordering automatic. All weights sum to less than 1, so every $z_k$ stays inside $(0, 1)$, satisfying the box constraint automatically. The optimizer can roam freely over all of $\mathbb{R}^9$ with no projection or penalty needed.
 
 ---
 
 ### Levenberg-Marquardt Least Squares
 
-We need to find the 8 unconstrained parameters $p$ such that the 10 side lengths of the mapped polygon match Boulder's 10 target ratios. This is a nonlinear least-squares problem.
+We need to find the 9 unconstrained parameters $p$ such that the 11 side lengths of the mapped polygon match Boulder's 11 target ratios. This is a nonlinear least-squares problem.
 
 **Algorithm:** Levenberg-Marquardt (LM) iterates a "guess-compare-correct" loop:
 
 1. Start with an initial guess for $p$.
-2. Compute the current pre-vertices via softmax, then evaluate the 10 SC side-length integrals.
+2. Compute the current pre-vertices via softmax, then evaluate the 11 SC side-length integrals.
 3. Compare computed side ratios to Boulder's target ratios, forming a residual vector.
 4. Compute a correction step using the Jacobian of the residuals, and update $p$.
 5. Repeat until the residual is small (our solver runs ~18,000 iterations, reaching cost $\approx 6 \times 10^{-4}$).
