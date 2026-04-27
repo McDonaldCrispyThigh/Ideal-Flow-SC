@@ -4,7 +4,7 @@
 Congyuan Zheng · Sophia Arany  
 University of Colorado Boulder, Department of Applied Mathematics
 
-**Deliverables:** [Report](report_draft.pdf) · [Slides (PPTX)](sc_flow_presentation.pptx)
+**Deliverables:** [Report](report_draft.pdf)
 
 ---
 
